@@ -349,7 +349,8 @@ function CopyBox({ label, value }: { label: string; value: string }) {
   )
 }
 
-function Centered({ children }: { children: ReactNode }) {
+/** 인증 게이트 화면들의 공통 껍데기. Schedule.tsx 도 같은 게이트를 쓰므로 함께 쓴다. */
+export function Centered({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center gap-4 rounded-2xl border border-line bg-surface px-6 py-14 text-center">
       {children}
@@ -361,7 +362,7 @@ function Code({ children }: { children: ReactNode }) {
   return <code className="rounded bg-bg px-1.5 py-0.5 font-mono text-[0.85em]">{children}</code>
 }
 
-function GoogleMark() {
+export function GoogleMark() {
   return (
     <svg viewBox="0 0 48 48" className="size-5" aria-hidden="true">
       <path

@@ -47,6 +47,20 @@ service cloud.firestore {
       // 남이 이미 쓰는 슬러그로 저장을 시도하면 create 가 아니라 update 로
       // 분류되어 두 번째 줄에서 막힌다. 클라이언트 중복 검사는 두 교사가 동시에
       // 저장할 때 둘 다 통과하므로 쓰지 않는다.
+      // 시간표는 교사마다 문서가 다르다 — 문서 id 가 uid 다.
+      //
+      // 학생이 볼 이유가 없는 교사 업무 정보(반 이름, 교실)라 읽기까지 막는다.
+      // 과목·자료의 핀처럼 "가벼운 잠금"이 아니라 진짜 차단이다.
+      //
+      // 읽기를 isMember() 로만 열어 동료 교사끼리는 서로의 시간표를 볼 수 있게
+      // 했다. 같은 학교에서 누가 언제 어느 교실에 있는지는 업무상 공유해도
+      // 되는 정보이고, 오히려 교실이 겹치는지 확인할 때 쓸모가 있다. 쓰기는
+      // 본인 문서만 — 남의 시간표를 고칠 수는 없다.
+      match /timetables/{uid} {
+        allow read: if isMember();
+        allow write: if isMember() && uid == request.auth.uid;
+      }
+
       match /teacherPages/{slug} {
         allow read: if true;
         allow create: if isMember()

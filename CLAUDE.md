@@ -14,7 +14,7 @@
 
 ## 0. 지금까지 온 곳 / 다음 할 일
 
-**1단계(골격) · 2단계(로그인 + 멤버) 완료.** 앱은 `web/` 아래에 있다.
+**1단계(골격) · 2단계(로그인 + 멤버) · 3단계(시간표) 완료.** 앱은 `web/` 아래에 있다.
 
 ```
 web/src/index.css          Pretendard @font-face + @theme 색 토큰
@@ -25,17 +25,20 @@ web/src/auth/AuthProvider.tsx  Google 로그인 + members/{uid} 확인
 web/src/lib/firebase.ts    Auth + Firestore (Storage 는 안 쓴다)
 web/src/lib/workspace.ts   WS_ID 상수 + wsPath() 헬퍼
 web/src/lib/teacherPages.ts  내 수업 주소(슬러그) 저장·조회
+web/src/lib/timetable.ts   시간표 — timetables/{uid}
+web/src/pages/Schedule.tsx 일정 (시간표 + 기록 탭)
 web/src/pages/Teacher.tsx  로그인 / 미등록(uid 표시) / 대시보드
 web/src/pages/*.tsx        Home 과 Teacher 외에는 자리표시
 web/public/fonts/          woff2 서브셋 4종 + OFL 원문
 firestore.rules            권한 규칙 (루트 — 앱 코드가 아니다)
 ```
 
-**다음은 3단계(시간표)** — 명세 7절 순서 그대로. `timetables/{uid}` 로
-교사마다 문서를 가른다. 개인정보가 없어서 가장 먼저 실물이 나온다.
+**다음은 4단계(반 명단 + 수업기록)** — 명세 7절 순서 그대로.
+시작 전에 사용자에게 물을 것이 하나 있다: 참여 기록(`dates`)도 담당 교사끼리
+공유할지(명세 4.5절).
 
-Firebase 쪽은 이미 살아 있다 — 프로젝트 `charim-b2c13`, Firestore 규칙 배포됨,
-소유자 멤버 문서 등록됨, 교사 페이지 슬러그 저장 확인까지 끝났다.
+Firebase 쪽은 이미 살아 있다 — 프로젝트 `charim-b2c13`, 규칙 배포됨(CLI),
+소유자 멤버 문서 등록됨, 교사 페이지 슬러그와 시간표 저장까지 실제로 확인했다.
 
 ### 읽을 것
 
@@ -58,10 +61,14 @@ Firebase 쪽은 이미 살아 있다 — 프로젝트 `charim-b2c13`, Firestore 
 "C:/Program Files/nodejs/npm.cmd" run deploy:rules
 ```
 
-**CLI 로그인은 아직 안 돼 있다.** 이 환경은 터미널이 없어서 `firebase login` 이
-"URL 방문 → 코드 받아 `firebase login <코드>`" 방식으로 자동 전환되는데, 그
-승인은 사용자가 직접 해야 한다. 로그인 전까지는 콘솔에 붙여넣는 방법을 쓴다
-(Firestore Database → 규칙 → 게시).
+**CLI 로그인 완료 (2026-08-23).** 토큰은
+`C:/Users/user/.config/configstore/firebase-tools.json` 에 있고 `.firebaserc` 가
+프로젝트를 고정하므로 위 명령 한 줄이면 배포된다.
+
+로그인이 풀리면 다시 해야 하는데, 이 환경은 터미널이 없어서 `firebase login` 이
+"URL 방문 → 코드 받아 `firebase login <코드>`" 방식으로 자동 전환된다. URL 을
+출력한 뒤 프로세스가 libuv 어서션으로 죽지만, 그 전에 세션(codeVerifier)을
+configstore 에 저장하므로 이어서 진행하면 된다. 승인은 사용자가 직접 해야 한다.
 
 ### 배포 (Vercel)
 
