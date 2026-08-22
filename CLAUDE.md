@@ -14,22 +14,28 @@
 
 ## 0. 지금까지 온 곳 / 다음 할 일
 
-**1단계(프로젝트 골격) 완료.** 앱은 `web/` 아래에 있다.
+**1단계(골격) · 2단계(로그인 + 멤버) 완료.** 앱은 `web/` 아래에 있다.
 
 ```
 web/src/index.css          Pretendard @font-face + @theme 색 토큰
 web/src/App.tsx            헤더 탭 + 풋터 레이아웃
 web/src/main.tsx           라우팅
 web/src/components/Logo.tsx  심볼 인라인 SVG + HTML 워드마크
+web/src/auth/AuthProvider.tsx  Google 로그인 + members/{uid} 확인
 web/src/lib/firebase.ts    Auth + Firestore (Storage 는 안 쓴다)
 web/src/lib/workspace.ts   WS_ID 상수 + wsPath() 헬퍼
-web/src/pages/*.tsx        Home 외에는 전부 자리표시
+web/src/lib/teacherPages.ts  내 수업 주소(슬러그) 저장·조회
+web/src/pages/Teacher.tsx  로그인 / 미등록(uid 표시) / 대시보드
+web/src/pages/*.tsx        Home 과 Teacher 외에는 자리표시
 web/public/fonts/          woff2 서브셋 4종 + OFL 원문
 firestore.rules            권한 규칙 (루트 — 앱 코드가 아니다)
 ```
 
-**다음은 2단계(로그인 + 멤버)** — 명세 7절 순서 그대로.
-교사 페이지 설정 탭에 **내 주소(슬러그) 정하기**를 함께 넣는다(명세 4.6절).
+**다음은 3단계(시간표)** — 명세 7절 순서 그대로. `timetables/{uid}` 로
+교사마다 문서를 가른다. 개인정보가 없어서 가장 먼저 실물이 나온다.
+
+Firebase 쪽은 이미 살아 있다 — 프로젝트 `charim-b2c13`, Firestore 규칙 배포됨,
+소유자 멤버 문서 등록됨, 교사 페이지 슬러그 저장 확인까지 끝났다.
 
 ### 읽을 것
 
