@@ -63,8 +63,15 @@ export function usePinAttemptThrottle(storageKey: string) {
   const isLocked = state.lockedUntil > now
 
   // 잠겨 있는 동안만 1초마다 다시 그려서 카운트다운 문구를 갱신한다.
+  //
+  // 시작하자마자 한 번 갱신하는 게 중요하다. now 는 마운트 시점 값이라, 학생이
+  // 화면을 열어둔 채 한참 뒤에 잠기면 lockedUntil - now 가 실제 남은 시간보다
+  // 훨씬 크게 나온다(30초 잠금인데 "52초 뒤에"로 뜨는 걸 배포본에서 확인했다).
+  // 그다음 틱에서 29초로 튀어 고장 난 것처럼 보인다. 첫 프레임부터 맞히려면
+  // recordFailure 에서도 now 를 갱신하고, 여기서도 즉시 한 번 맞춘다.
   useEffect(() => {
     if (!isLocked) return
+    setNow(Date.now())
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [isLocked])
@@ -76,6 +83,8 @@ export function usePinAttemptThrottle(storageKey: string) {
   }, [])
 
   const recordFailure = useCallback(() => {
+    // 잠금이 걸리는 순간의 기준 시각을 여기서 맞춰둔다 — 위 useEffect 주석 참고.
+    setNow(Date.now())
     setState((current) => {
       const failCount = current.failCount + 1
       const next: ThrottleState =
