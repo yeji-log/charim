@@ -125,10 +125,16 @@ function explainAuthError(code: string): string {
       return '브라우저가 로그인 창을 막았습니다. 주소창 오른쪽의 팝업 차단 아이콘을 눌러 허용해 주세요.'
     case 'auth/network-request-failed':
       return '네트워크 연결에 실패했습니다. 인터넷 연결을 확인해 주세요.'
-    case 'auth/invalid-api-key':
-    case 'auth/api-key-not-valid':
-      return 'Firebase 설정값이 올바르지 않습니다. 배포 환경변수를 확인해 주세요.'
     default:
+      // Firebase 는 잘못된 키에 대해 'auth/api-key-not-valid.-please-pass-a-
+      // valid-api-key.' 처럼 문장을 그대로 코드로 만들어 던진다. 정확히 일치
+      // 시키려 하지 말고 앞부분만 본다.
+      if (code.startsWith('auth/api-key-not-valid') || code === 'auth/invalid-api-key') {
+        // 실제로 겪은 사고라서 원인을 문장에 박아둔다. 배포 환경변수에 키를
+        // 넣을 때, 화면에 가려져 표시된 값(AIzaSyBu●●●●…)을 그대로 복사해서
+        // 붙여넣으면 길이도 앞글자도 진짜와 같아 눈으로는 구분되지 않는다.
+        return 'Firebase API 키가 올바르지 않습니다. 배포 환경변수 VITE_FIREBASE_API_KEY 값을 확인해 주세요 — 가려진 채 표시된 값(● 이 섞인 값)을 복사해 넣으면 길이가 같아 눈으로는 구분되지 않습니다.'
+      }
       return `로그인에 실패했습니다. (오류 코드: ${code || '알 수 없음'})`
   }
 }
