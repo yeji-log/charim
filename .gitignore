@@ -3,10 +3,14 @@ Pretendard-*.zip
 
 node_modules
 dist
+# tsc -b 가 남기는 증분 빌드 캐시
+*.tsbuildinfo
 .DS_Store
 *.log
 .vercel
 .env*
+# 설정 항목 이름만 담은 예시 파일은 올린다 — 값은 비어 있다.
+!.env.example
 .vscode/*
 !.vscode/extensions.json
 .idea

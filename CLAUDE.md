@@ -12,18 +12,44 @@
 
 ---
 
-## 0. 다음 세션이 가장 먼저 할 일
+## 0. 지금까지 온 곳 / 다음 할 일
 
-이 폴더에는 아직 문서와 브랜드 자산만 있다. 코드는 없다.
+**1단계(프로젝트 골격) 완료.** 앱은 `web/` 아래에 있다.
 
-1. **이 문서를 끝까지 읽는다.** 특히 3절(이미 결정된 것)과 11절(작업 스타일).
-2. **[`핵심기능_명세.md`](핵심기능_명세.md)를 읽는다.** 이식할 다섯 기능의
-   데이터 모델·화면 구조·주의점이 CHICODE 실제 코드 기준으로 정리돼 있다.
+```
+web/src/index.css          Pretendard @font-face + @theme 색 토큰
+web/src/App.tsx            헤더 탭 + 풋터 레이아웃
+web/src/main.tsx           라우팅
+web/src/components/Logo.tsx  심볼 인라인 SVG + HTML 워드마크
+web/src/lib/firebase.ts    Auth + Firestore (Storage 는 안 쓴다)
+web/src/lib/workspace.ts   WS_ID 상수 + wsPath() 헬퍼
+web/src/pages/*.tsx        Home 외에는 전부 자리표시
+web/public/fonts/          woff2 서브셋 4종 + OFL 원문
+```
+
+**다음은 2단계(로그인 + 멤버)** — 명세 7절 순서 그대로.
+
+### 읽을 것
+
+1. **이 문서를 끝까지.** 특히 3절(이미 결정된 것)과 11절(작업 스타일).
+2. **[`핵심기능_명세.md`](핵심기능_명세.md).** 이식할 기능들의 데이터 모델·화면
+   구조·주의점이 CHICODE 실제 코드 기준으로 정리돼 있다.
    **데이터 모델은 그 문서가 이 문서 4절보다 우선한다.**
-3. 9절의 순서대로 **1단계(프로젝트 골격)부터** 시작한다.
 
-시작 전에 사용자에게 확인해야 할 것 두 가지가 10절과 명세 4.5절에 있다 —
-`fontTools` 설치 여부와, 동료 교사의 반 명단 열람 범위다.
+### 실행
+
+이 PC 는 Node 가 PATH 에 없다(10절). `npm run dev` 는 그래서 죽는다 —
+`.claude/launch.json` 이 `node.exe` 로 vite 를 직접 실행하도록 돼 있으니
+그쪽을 쓴다. 직접 돌릴 때는:
+
+```
+"C:/Program Files/nodejs/npm.cmd" --prefix web run build
+```
+
+### 아직 물어봐야 할 것
+
+- **참여 기록을 담당 교사끼리 공유할지** (명세 4.5절) — 4단계 전에.
+- **워드마크 Path 변환 도구 설치** (10절) — 외부 다운로드라 확인 필요.
 
 원격 저장소: `https://github.com/yeji-log/charim.git`
 
@@ -79,15 +105,19 @@ CHICODE의 `CLAUDE.md`와 `web/README.md`는 읽을 가치가 있다 — 특히 
 3. **기술 스택: Vite + React + TypeScript + Firebase + Vercel.**
    CHICODE와 같게 간다. 그래야 코드 이식이 공짜다.
 4. **브랜드명: 차림 / CHARIM.** 슬로건 "오늘의 수업을 차리다."
-5. **Firebase는 CHICODE와 같은 Google 계정을 쓰고, 프로젝트만 새로 만든다.**
+5. **Firebase 프로젝트: `charim-b2c13`** (2026-08-22 생성 완료).
+   CHICODE와 같은 Google 계정이고 프로젝트만 새로 팠다.
    계정을 새로 파지 않는다 — 무료(Spark) 한도가 계정이 아니라 **프로젝트 단위**로
    적용되므로 새 프로젝트를 만들면 저장 1GiB·읽기 5만/일을 CHICODE와 나눠 쓰지
    않는다. 격리도 프로젝트 단위라(Firestore·Auth 사용자 풀·규칙·승인 도메인이
    전부 별개) 소유 계정이 같다고 데이터가 섞이지 않는다.
    계정을 나누면 Vercel·GitHub까지 갈라져 관리만 번거로워진다.
 
-   프로젝트를 만들 때 챙길 것:
-   - 프로젝트 ID는 전역 유일하고 나중에 못 바꾼다 (`charim-edu` 등)
+   웹 앱 설정값은 `web/.env.local` 에 넣어뒀다(`web/.env.example` 이 항목 이름만
+   담은 사본이다). 이 값들은 비밀이 아니다 — 클라이언트 번들에 그대로 실려
+   배포되고, 실제 차단은 `firestore.rules` 가 한다.
+
+   아직 안 한 것:
    - **Cloud Storage는 켜지 않는다** — 새 프로젝트에서는 Blaze 유료 플랜을 요구한다
    - Authentication 승인 도메인에 배포 주소를 등록해야 로그인이 된다
      (CHICODE는 GitHub Pages 주소를 등록 안 해서 그쪽은 로그인이 안 되는 상태다)
@@ -115,7 +145,7 @@ workspaces/{wsId}                    ← 학교 하나 (당분간 1개만 존재
   materials/{id}                     ← 자료 (courseId 필드로 과목에 연결)
   seasons/{id}                       ← 시즌/수업목차 (courseId 없으면 동아리)
   activities/{id}                    ← 활동/수업내용 (courseId 없으면 동아리)
-  classes/{classId}/students/{id}    ← 반 명단 (교사끼리 공유)
+  classes/{classId}/students/{id}    ← 반 명단 (담당 교사끼리 공유)
                    /dates/{id}       ← 날짜별 참여 기록
   timetables/{uid}                   ← 시간표는 교사마다 다르다 ★
 ```
@@ -146,6 +176,10 @@ CHICODE는 `timetable/default`, `labSettings/home`, `practiceSettings/pico2w` �
 CHICODE는 교사가 자기 반 명단을 직접 입력했다. 학교 단위면 한 명이 만들어두면
 다른 교사가 그대로 쓴다.
 
+다만 공유 범위는 **담당 교사끼리**다(5절). 한 반에 국어·수학·영어 교사가 함께
+들어가면 그 셋이 명단 하나를 나눠 쓰고, 그 반에 안 들어가는 교사에게는 아예
+보이지 않는다.
+
 ---
 
 ## 5. 권한 규칙 (firestore.rules)
@@ -163,11 +197,16 @@ CHICODE는 교사가 자기 반 명단을 직접 입력했다. 학교 단위면 
 - `classes` / `students` / `records` / `timetables` 는 `read`도 `isMember()`로 막는다.
   학생 학번·이름은 미성년자 개인정보다.
 
-### 아직 안 정한 것
+### 반 명단 열람 범위 — 결정됨 (2026-08-22)
 
-**동료 교사가 내 반 명단을 다 볼 수 있어도 되는가?** 같은 학교라도 남의 학년까지
-보이는 건 과할 수 있다. `isMember()`로 열지, 담당 반만으로 좁힐지 사용자에게
-물어볼 것.
+**담당 교사는 담당 반만 본다.** `isMember()`만으로는 열지 않는다. 같은 학교라도
+남의 학년 학생 명단까지 다 보이는 건 과하다는 판단이다.
+
+`classes` 문서에 담당 교사를 적고, 읽기·쓰기 모두 그 목록에 있어야 통과시킨다.
+한 반에 여러 과목 교사가 들어가므로 담당자는 **단수 소유자가 아니라 목록**이다.
+Firestore 규칙은 목록 조회를 자동으로 걸러주지 않으므로, 클라이언트 질의에
+`where('teacherUids', 'array-contains', uid)` 를 넣고 규칙이 그 조건을 강제해야
+한다. 상세는 `핵심기능_명세.md` 4.5절·5절.
 
 ---
 
@@ -298,7 +337,7 @@ CHICODE의 `src/content/PrivacyPolicy.tsx`는 **"담당 교사가 자기 학생�
 
 앞 단계가 끝날 때마다 실제로 눌러보고 확인받은 뒤 다음으로 간다.
 
-1. **프로젝트 골격** — Vite + React + TS, Pretendard 자체 호스팅, 색 토큰, 로고·파비콘 적용
+1. ~~**프로젝트 골격**~~ — 완료
 2. **로그인 + 멤버** — `firebase.ts` 이식, `isMember()` 규칙, workspace 상수 고정
 3. **시간표(교사별)** — 개인정보가 없어서 가장 먼저 실물이 나온다
 4. **반 명단 + 수업기록** — `classRecords.ts` 이식 + 명단을 학교 공용으로 분리
@@ -323,19 +362,25 @@ CHICODE의 `src/content/PrivacyPolicy.tsx`는 **"담당 교사가 자기 학생�
 떨어진다.
 
 - 폰트는 `brand/pretendard/otf/` 에 준비돼 있다
-- 변환 도구가 없다 — Node는 이 환경에 없고, Python은 3.13이 있으나 `fontTools`가
-  설치돼 있지 않다. `pip install fonttools` 가 필요하다(PyPI 다운로드).
+- **정정: Node 는 이 환경에 있다.** `C:/Program Files/nodejs/node.exe` 에 v24.19.0,
+  npm 11.17.0 이 깔려 있는데 PATH 에 등록만 안 돼 있어서 없는 것처럼 보였다
+  (`node -v` 가 "command not found"). 그래서 변환 도구 선택지는 둘이다 —
+  npm 의 `opentype.js`, 또는 `pip install fonttools`. 어느 쪽이든 외부 다운로드라
   **설치 전에 사용자에게 물을 것.**
+
+  PATH 문제는 실행에도 영향이 있다. `npm run dev` 는 내부에서 `node` 를 PATH 에서
+  다시 찾기 때문에 그대로는 죽는다. `.claude/launch.json` 은 그래서 npm 을 거치지
+  않고 `node.exe` 로 vite 진입 스크립트를 직접 실행한다.
 
 ### 앱 아이콘 PNG
 
 `icon-192.png` / `icon-512.png` — 배경 `#315C8C` + 흰색 심볼 + 둥근 모서리.
 텍스트 `차림`은 넣지 않는다(제작 지침 9절·13절).
 
-### `Pretendard-1.3.9.zip` (47MB)
+### ~~`Pretendard-1.3.9.zip` (47MB)~~ — 처리됨
 
-이 폴더 루트에 원본 zip이 그대로 있다. 필요한 파일은 이미 `brand/pretendard/`로
-꺼냈으니, **`.gitignore`에 반드시 넣거나 지울 것.** 저장소에 47MB를 올리면 안 된다.
+`.gitignore` 2번 줄 `Pretendard-*.zip` 이 이미 걸러낸다(`git check-ignore` 로 확인).
+파일 자체는 루트에 그대로 두었다.
 
 ### 상표·중복 확인
 
