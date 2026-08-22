@@ -1,0 +1,12 @@
+# 폰트 원본 zip — 필요한 파일은 brand/pretendard/ 로 이미 꺼냈다. 47MB 라 올리지 않는다.
+Pretendard-*.zip
+
+node_modules
+dist
+.DS_Store
+*.log
+.vercel
+.env*
+.vscode/*
+!.vscode/extensions.json
+.idea
