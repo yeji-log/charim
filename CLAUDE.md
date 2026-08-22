@@ -83,6 +83,22 @@ Root Directory 를 `web` 으로 두면 Vercel 이 Vite 를 자동 인식해서
 
 Authentication 승인 도메인에 `charim.vercel.app` 을 등록해야 로그인이 된다.
 
+**환경변수에 API 키를 넣을 때 가려진 값을 복사하지 말 것.** 실제로 겪었다 —
+Vercel 에 들어간 `VITE_FIREBASE_API_KEY` 값이 `AIzaSyBu` + 가운뎃점(U+2022) 31개
+였다. 화면에 가려져 표시된 상태 그대로 복사된 것인데, 길이(39자)도 앞 8글자도
+진짜와 같아서 눈으로는 구분되지 않는다. 공백도 따옴표도 없어 흔한 붙여넣기
+검사에도 안 걸린다. Vercel 의 Sensitive 옵션을 켜면 값을 다시 볼 수 없어 이
+사고를 더 잘 만든다 — 어차피 번들에 실려 나가는 공개 값이니 켜지 말 것.
+
+값이 의심되면 눈으로 보지 말고 해시로 대조한다. 배포된 번들에서 `apiKey`
+리터럴을 꺼내 브라우저에서 SHA-256 을 구하고 로컬 `.env.local` 값의 해시와
+비교하면 확정된다. 화면 오류 문구(`AuthProvider.tsx` 의 `explainAuthError`)에도
+이 원인을 적어뒀다.
+
+**검증 완료 (2026-08-23)**: PC·아이패드 양쪽에서 배포본 로그인 성공.
+아이패드가 됐다는 건 `firebase.ts` 의 `browserLocalPersistence` 우회가 실기기에서
+실제로 통했다는 뜻이다 — 그 코드를 지우지 말아야 할 근거가 하나 더 생겼다.
+
 ### 실행
 
 이 PC 는 Node 가 PATH 에 없다(10절). `npm run dev` 는 그래서 죽는다 —
