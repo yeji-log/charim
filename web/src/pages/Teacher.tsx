@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { CharimSymbol } from '../components/Logo'
 import TeacherCourses from './TeacherCourses'
+import ClubBoard from './ClubBoard'
 import { isFirebaseConfigured } from '../lib/firebase'
 import {
   SlugError,
@@ -127,9 +128,7 @@ function TeacherDashboard() {
 
       <TeacherCourses />
 
-      <section className="rounded-2xl border border-dashed border-line p-6 text-sm leading-relaxed text-muted">
-        동아리는 6단계에서 이 아래에 붙습니다.
-      </section>
+      <ClubBoard />
     </div>
   )
 }

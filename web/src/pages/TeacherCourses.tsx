@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
 import Modal from '../components/Modal'
+import BoardEditor from './BoardEditor'
 import ToggleSwitch from '../components/ToggleSwitch'
 import {
   createCourse,
@@ -302,6 +303,11 @@ function CourseEditor({
               </span>
             </span>
           </label>
+        </div>
+
+        <div className="border-t border-line pt-5">
+          <h3 className="mb-3 text-sm font-bold text-text">수업목차 · 수업 내용</h3>
+          <BoardEditor courseId={course.id} />
         </div>
 
         <div className="border-t border-line pt-5">

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Link, Outlet, useOutletContext, useParams } from 'react-router-dom'
+import { Link, NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
 import { getCourse, type CourseMeta } from '../lib/courses'
@@ -118,6 +118,16 @@ export default function CourseGate() {
         </p>
       )}
 
+      {/* 학생이 과목에 들어오면 자료보다 수업목차부터 보게 한다 — 그래서
+          수업목차가 index 라우트다(main.tsx). */}
+      <nav className="flex min-w-0 gap-1 overflow-x-auto border-b border-line pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <CourseTab to={`/materials/${course.id}`} end>
+          수업목차
+        </CourseTab>
+        <CourseTab to={`/materials/${course.id}/content`}>수업 내용</CourseTab>
+        <CourseTab to={`/materials/${course.id}/materials`}>자료</CourseTab>
+      </nav>
+
       <Outlet context={{ course } satisfies CourseContext} />
     </div>
   )
@@ -188,6 +198,31 @@ function PinGate({ course, onUnlock }: { course: CourseMeta; onUnlock: () => voi
         과목 목록으로
       </Link>
     </Centered>
+  )
+}
+
+function CourseTab({
+  to,
+  end,
+  children,
+}: {
+  to: string
+  end?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        [
+          'whitespace-nowrap rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+          isActive ? 'bg-primary-tint text-primary-dark' : 'text-muted hover:text-text',
+        ].join(' ')
+      }
+    >
+      {children}
+    </NavLink>
   )
 }
 

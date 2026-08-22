@@ -36,6 +36,13 @@ service cloud.firestore {
         allow list, create, update, delete: if false;
       }
 
+      // 사이트·동아리 설정. 학생 화면이 읽어야 하므로 읽기는 공개다 —
+      // 동아리 핀도 여기 있고, 과목 핀과 같은 "가벼운 잠금" 트레이드오프다.
+      match /settings/{docId} {
+        allow read: if true;
+        allow write: if isMember();
+      }
+
       // 교사 공개 페이지 (/t/{slug}). 학생은 로그인이 없으므로 읽기는 열어둔다.
       //
       // 이 컬렉션을 members 와 따로 두는 이유가 바로 위의 list 차단이다. 학생이
@@ -78,6 +85,30 @@ service cloud.firestore {
           allow read: if true;
           allow write: if isMember();
         }
+      }
+
+      // 수업목차(시즌)와 수업 내용(활동).
+      //
+      // 컬렉션 하나를 두 맥락이 공유한다 — courseId 필드가 있으면 과목 것,
+      // 없으면 동아리 것이다. 과목 밑에 중첩하지 않은 이유는 그러면 동아리용
+      // 화면을 복제해야 하기 때문이다(lessons.ts 참고).
+      //
+      // 학생이 봐야 하므로 읽기는 공개다. 준비 중인 내용을 숨기는 건 화면에서
+      // published 로 거르는 것이지 규칙이 아니다 — 학생이 로그인하지 않으므로
+      // 규칙으로 가를 방법이 없다. 과목 핀과 같은 성격의 트레이드오프다.
+      //
+      // 쓰기는 멤버 교사면 누구나 가능하게 뒀다. 동아리는 학교에 하나뿐이라
+      // 담당 교사끼리 함께 쓰는 공간이고, 과목 쪽 활동도 같은 컬렉션에 있어서
+      // ownerUid 로 가르려면 활동마다 소유자를 따로 들고 다녀야 한다. 초대제로
+      // 들어온 동료 교사만 쓸 수 있으므로 여기서는 isMember() 로 충분하다.
+      match /seasons/{seasonId} {
+        allow read: if true;
+        allow write: if isMember();
+      }
+
+      match /activities/{activityId} {
+        allow read: if true;
+        allow write: if isMember();
       }
 
       // 반 — 학생 학번·이름이 들어가는 곳이라 가장 좁게 막는다.
