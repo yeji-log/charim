@@ -36,6 +36,26 @@ web/public/fonts/          woff2 서브셋 4종 + OFL 원문
    구조·주의점이 CHICODE 실제 코드 기준으로 정리돼 있다.
    **데이터 모델은 그 문서가 이 문서 4절보다 우선한다.**
 
+### 배포 (Vercel)
+
+**저장소 루트에는 `package.json` 이 없다.** 앱이 `web/` 아래에 있기 때문이다.
+Vercel 프로젝트 설정의 **Root Directory 를 `web` 으로 지정해야** 빌드가 돈다.
+지정하지 않으면 Vercel 이 루트를 정적 사이트로 보고 `index.html` 을 못 찾아
+`404: NOT_FOUND` 만 뜬다 (charim.vercel.app 이 실제로 그 상태였다).
+
+Root Directory 를 `web` 으로 두면 Vercel 이 Vite 를 자동 인식해서
+`npm install` → `npm run build` → `dist` 배포까지 알아서 한다.
+
+`web/vercel.json` 의 rewrite 는 SPA 딥링크용이다 — 이게 없으면 `/schedule` 로
+직접 들어왔을 때 Vercel 이 그 경로의 파일을 찾다가 404 를 낸다. react-router 가
+받으려면 모든 경로를 `index.html` 로 돌려줘야 한다.
+
+환경 변수 6개(`VITE_FIREBASE_*`)를 Vercel 프로젝트 설정에도 넣어야 한다 —
+`web/.env.local` 은 저장소에 올라가지 않는다. 값은 `web/.env.example` 의 항목
+이름 그대로이고, 실제 값은 Firebase 콘솔 또는 로컬 `.env.local` 에 있다.
+
+Authentication 승인 도메인에 `charim.vercel.app` 을 등록해야 로그인이 된다.
+
 ### 실행
 
 이 PC 는 Node 가 PATH 에 없다(10절). `npm run dev` 는 그래서 죽는다 —
