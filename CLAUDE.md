@@ -14,7 +14,7 @@
 
 ## 0. 지금까지 온 곳 / 다음 할 일
 
-**1~4단계 완료**(골격 / 로그인·멤버 / 시간표 / 반 명단·수업기록). 앱은 `web/` 아래에 있다.
+**1~5단계 완료**(골격 / 로그인·멤버 / 시간표 / 반 명단·수업기록 / 과목·수업자료·핀 게이트). 앱은 `web/` 아래에 있다.
 
 ```
 web/src/index.css          Pretendard @font-face + @theme 색 토큰
@@ -27,6 +27,12 @@ web/src/lib/workspace.ts   WS_ID 상수 + wsPath() 헬퍼
 web/src/lib/teacherPages.ts  내 수업 주소(슬러그) 저장·조회
 web/src/lib/timetable.ts   시간표 — timetables/{uid}
 web/src/lib/classRecords.ts  반 명단(공용) + 참여 기록(교사별)
+web/src/lib/chunkedFile.ts   파일을 base64 조각으로 Firestore 에 저장 ★
+web/src/lib/courses.ts       과목 (핀·공개 여부)
+web/src/lib/materials.ts     수업자료 — 파일은 chunkedFile 에 맡긴다
+web/src/lib/pinThrottle.ts   핀 오입력 감속
+web/src/pages/CourseGate.tsx 핀 게이트 (부모 라우트가 <Outlet/> 을 연다)
+web/src/pages/TeacherPublicPage.tsx  /t/{슬러그}
 web/src/pages/ClassRecords.tsx  수업기록 화면
 web/src/pages/Schedule.tsx 일정 (시간표 + 기록 탭)
 web/src/pages/Teacher.tsx  로그인 / 미등록(uid 표시) / 대시보드
@@ -35,9 +41,13 @@ web/public/fonts/          woff2 서브셋 4종 + OFL 원문
 firestore.rules            권한 규칙 (루트 — 앱 코드가 아니다)
 ```
 
-**다음은 5단계(과목 + 수업자료 + 핀 게이트)** — 명세 7절 순서 그대로.
-여기서 학생 쪽 `/t/{슬러그}` 라우팅도 함께 붙인다(명세 4.6절).
-`chunkedFile.ts` 이식이 들어가므로 무료 플랜의 1GiB 한도를 염두에 둘 것.
+**다음은 6단계(수업내용 보드)** — 명세 7절 순서 그대로. `labs.ts` +
+`LabBoardEditor` 이식이고, 활동 항목 드래그 정렬 때문에 `@dnd-kit` 도입 여부를
+여기서 정해야 한다(4단계에서는 화살표 버튼으로 대신했다).
+
+`/materials/:courseId` 아래에 수업목차·수업내용 라우트가 함께 붙는다. 지금은
+index 가 자료 목록인데, 명세 3절의 최종 배치는 index 가 수업목차이고 자료는
+`/materials` 하위 경로다 — 6단계에서 옮긴다.
 
 Firebase 쪽은 이미 살아 있다 — 프로젝트 `charim-b2c13`, 규칙 배포됨(CLI),
 소유자 멤버 문서 등록됨, 교사 페이지 슬러그와 시간표 저장까지 실제로 확인했다.
@@ -420,7 +430,7 @@ CHICODE의 `src/content/PrivacyPolicy.tsx`는 **"담당 교사가 자기 학생�
 2. **로그인 + 멤버** — `firebase.ts` 이식, `isMember()` 규칙, workspace 상수 고정
 3. **시간표(교사별)** — 개인정보가 없어서 가장 먼저 실물이 나온다
 4. ~~**반 명단 + 수업기록**~~ — 완료. 명단은 담당 교사 공용, 기록은 교사별
-5. **과목 + 수업자료 + 핀 게이트**
+5. ~~**과목 + 수업자료 + 핀 게이트**~~ — 완료. `/t/{슬러그}` 도 함께
 6. **수업내용 보드** — `labs.ts` + `LabBoardEditor` 이식
 7. **발표 모드**
 8. **정책 문서** — 실제 동작을 확인한 뒤 작성
