@@ -2,6 +2,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   limit,
   query,
@@ -93,6 +94,19 @@ export async function listTeacherPages(): Promise<TeacherPage[]> {
       published: true,
     }))
     .sort((a, b) => a.displayName.localeCompare(b.displayName, 'ko'))
+}
+
+/** 슬러그로 찾는다. `/t/{슬러그}` 가 이걸 쓴다 — 문서 id 가 슬러그라 조회 한 번이다. */
+export async function getTeacherPageBySlug(slug: string): Promise<TeacherPage | null> {
+  const snapshot = await getDoc(doc(db, ...wsPath('teacherPages', slug)))
+  if (!snapshot.exists()) return null
+  const data = snapshot.data()
+  return {
+    slug: snapshot.id,
+    uid: data.uid,
+    displayName: data.displayName ?? '',
+    published: data.published ?? false,
+  }
 }
 
 /**

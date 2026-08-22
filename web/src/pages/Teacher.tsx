@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
 import { CharimSymbol } from '../components/Logo'
+import TeacherCourses from './TeacherCourses'
 import { isFirebaseConfigured } from '../lib/firebase'
 import {
   SlugError,
@@ -124,8 +125,10 @@ function TeacherDashboard() {
 
       <TeacherPageSettings />
 
+      <TeacherCourses />
+
       <section className="rounded-2xl border border-dashed border-line p-6 text-sm leading-relaxed text-muted">
-        과목·수업자료는 5단계에서, 동아리는 6단계에서 이 아래에 붙습니다.
+        동아리는 6단계에서 이 아래에 붙습니다.
       </section>
     </div>
   )
