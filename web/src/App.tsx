@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { useAuth } from './auth/AuthProvider'
 import Logo from './components/Logo'
 
 const TABS = [
@@ -11,10 +12,7 @@ const TABS = [
 /**
  * 일정(시간표 + 수업기록)은 교사 업무용이라 로그인한 교사에게만 노출한다.
  * 다만 이건 편의일 뿐이고 실제 방어선은 firestore.rules 다 — timetables /
- * classes 는 읽기 자체를 isMember() 로 막는다.
- *
- * TODO(2단계): AuthProvider 를 이식한 뒤 authState === 'teacher' 로 가른다.
- * 지금은 골격을 눌러볼 수 있게 항상 보여준다.
+ * classes 는 읽기 자체를 isMember() 로 막는다. 탭을 감춘다고 막히는 게 아니다.
  */
 const TEACHER_TABS = [{ to: '/schedule', label: '일정', end: false }]
 
@@ -27,6 +25,8 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
   ].join(' ')
 
 export default function App() {
+  const { state: authState } = useAuth()
+
   return (
     <div className="flex min-h-full flex-col">
       <header className="sticky top-0 z-20 border-b border-line bg-surface/85 backdrop-blur">
@@ -40,7 +40,7 @@ export default function App() {
               대신 가로 스크롤로 흐르게 한다 — min-w-0 + overflow-x-auto + 각 탭
               whitespace-nowrap 조합이 필요하다. CHICODE 가 실제로 겪고 고친 부분. */}
           <nav className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {[...TABS, ...TEACHER_TABS].map((tab) => (
+            {(authState === 'teacher' ? [...TABS, ...TEACHER_TABS] : TABS).map((tab) => (
               <NavLink key={tab.to} to={tab.to} end={tab.end} className={tabClass}>
                 {tab.label}
               </NavLink>
@@ -51,6 +51,16 @@ export default function App() {
             to="/teacher"
             className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-line px-2.5 py-2 text-sm font-semibold text-muted transition-colors hover:border-secondary hover:text-primary-dark sm:px-3"
           >
+            {/* 로그인 상태에서만 켜지는 표시 — 교사가 로그인이 풀렸는지 헷갈리지
+                않도록. 화면 진입 자체는 Teacher.tsx 가 다시 확인하므로 이 점은
+                장식일 뿐 권한 판단이 아니다. */}
+            {authState === 'teacher' && (
+              <span
+                aria-hidden="true"
+                title="로그인됨"
+                className="size-2 shrink-0 rounded-full bg-success"
+              />
+            )}
             <span className="sm:hidden">교사</span>
             <span className="hidden sm:inline">교사 페이지</span>
           </NavLink>

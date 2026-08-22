@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// 차림 접근 규칙.
+//
+// 여기가 실제 방어선이다. 화면에서 버튼을 숨기거나 탭을 감추는 것은 편의일 뿐이고,
+// 브라우저 코드를 아무리 고쳐도 이 규칙을 우회할 수 없다.
+//
+// 두 가지를 계속 지킬 것:
+//
+//  1. 하위 컬렉션은 규칙을 상속받지 않는다. chunks 같은 서브컬렉션도 빠짐없이
+//     따로 적어야 한다 — 빠뜨리면 그 아래가 무방비로 열린다.
+//  2. 여기 적히지 않은 경로는 기본이 거부다. 단계가 진행되면서 컬렉션이 늘 때마다
+//     이 파일에 함께 추가한다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /workspaces/{wsId} {
+
+      // Google 로그인에 성공했다고 교사가 되는 것이 아니다.
+      // members 에 자기 uid 문서가 있어야 한다. 문서는 콘솔에서 손으로 만든다.
+      function isMember() {
+        return request.auth != null
+          && request.auth.token.email_verified == true
+          && exists(/databases/$(database)/documents/workspaces/$(wsId)/members/$(request.auth.uid));
+      }
+
+      // workspace 문서 자체는 아직 아무것도 담지 않는다. 하위 경로만 쓴다.
+      allow read, write: if false;
+
+      // 교사 명단: 로그인한 사람이 '자기 자신'의 등록 여부만 확인할 수 있다.
+      //
+      // list 를 막는 게 핵심이다. 문서 id 가 uid 라 그 자체는 개인정보가 아니지만
+      // 안에 이메일이 들어 있고, 목록을 열면 학교 교사 전원의 이메일이 샌다.
+      // 추가·삭제는 Firebase 콘솔에서만 한다 — 초대제라 자동 가입이 없다.
+      match /members/{uid} {
+        allow get: if request.auth != null && uid == request.auth.uid;
+        allow list, create, update, delete: if false;
+      }
+
+      // 교사 공개 페이지 (/t/{slug}). 학생은 로그인이 없으므로 읽기는 열어둔다.
+      //
+      // 이 컬렉션을 members 와 따로 두는 이유가 바로 위의 list 차단이다. 학생이
+      // "kim" 이라는 주소로 교사를 찾으려면 어딘가는 공개 읽기여야 하는데,
+      // members 를 열 수는 없으니 공개해도 되는 것(uid·표시 이름)만 담은 문서를
+      // 따로 만든다. 그러므로 여기에 이메일을 넣으면 안 된다.
+      //
+      // 아래 두 줄이 슬러그 중복 방지 장치이기도 하다. 문서 id 가 곧 슬러그라,
+      // 남이 이미 쓰는 슬러그로 저장을 시도하면 create 가 아니라 update 로
+      // 분류되어 두 번째 줄에서 막힌다. 클라이언트 중복 검사는 두 교사가 동시에
+      // 저장할 때 둘 다 통과하므로 쓰지 않는다.
+      match /teacherPages/{slug} {
+        allow read: if true;
+        allow create: if isMember()
+          && request.resource.data.uid == request.auth.uid;
+        allow update, delete: if isMember()
+          && resource.data.uid == request.auth.uid;
+      }
+    }
+  }
+}

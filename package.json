@@ -1,0 +1,11 @@
+{
+  "name": "charim",
+  "private": true,
+  "description": "차림 — 저장소 도구. 앱은 web/ 에 있다.",
+  "scripts": {
+    "deploy:rules": "firebase deploy --only firestore:rules"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.28.1"
+  }
+}

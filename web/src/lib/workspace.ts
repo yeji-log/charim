@@ -10,7 +10,14 @@
  */
 export const WS_ID = 'default'
 
-/** workspaces/{wsId}/... 아래의 경로 조각을 만든다. */
-export function wsPath(...segments: string[]) {
+/**
+ * workspaces/{wsId}/... 아래의 경로 조각을 만든다.
+ *
+ * 반환형이 그냥 string[] 이면 doc(db, ...wsPath('members', uid)) 가 타입 오류를
+ * 낸다 — firebase 의 doc()/collection() 은 (db, path: string, ...rest: string[])
+ * 라서 첫 조각이 반드시 있어야 하는데, string[] 은 비어 있을 수도 있기 때문이다.
+ * 최소 두 개가 보장된 튜플로 돌려주면 그대로 펼쳐 쓸 수 있다.
+ */
+export function wsPath(...segments: string[]): [string, string, ...string[]] {
   return ['workspaces', WS_ID, ...segments]
 }

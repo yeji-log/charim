@@ -25,6 +25,7 @@ web/src/lib/firebase.ts    Auth + Firestore (Storage 는 안 쓴다)
 web/src/lib/workspace.ts   WS_ID 상수 + wsPath() 헬퍼
 web/src/pages/*.tsx        Home 외에는 전부 자리표시
 web/public/fonts/          woff2 서브셋 4종 + OFL 원문
+firestore.rules            권한 규칙 (루트 — 앱 코드가 아니다)
 ```
 
 **다음은 2단계(로그인 + 멤버)** — 명세 7절 순서 그대로.
@@ -36,6 +37,25 @@ web/public/fonts/          woff2 서브셋 4종 + OFL 원문
 2. **[`핵심기능_명세.md`](핵심기능_명세.md).** 이식할 기능들의 데이터 모델·화면
    구조·주의점이 CHICODE 실제 코드 기준으로 정리돼 있다.
    **데이터 모델은 그 문서가 이 문서 4절보다 우선한다.**
+
+### Firestore 규칙 배포
+
+규칙은 저장소 루트에 있다 — `firestore.rules` / `firebase.json`. 앱 코드가 아니라
+인프라 설정이라 `web/` 밖에 둔다. 배포 도구(`firebase-tools`)도 같은 이유로
+루트 `package.json` 의 devDependency 다.
+
+**web/package.json 에 넣지 말 것.** Vercel 의 Root Directory 가 `web` 이라
+거기 있는 devDependency 는 배포할 때마다 전부 설치된다. firebase-tools 는
+620개 패키지를 끌고 와서(web 자체는 90개다) 빌드가 매번 그만큼 느려진다.
+
+```
+"C:/Program Files/nodejs/npm.cmd" run deploy:rules
+```
+
+**CLI 로그인은 아직 안 돼 있다.** 이 환경은 터미널이 없어서 `firebase login` 이
+"URL 방문 → 코드 받아 `firebase login <코드>`" 방식으로 자동 전환되는데, 그
+승인은 사용자가 직접 해야 한다. 로그인 전까지는 콘솔에 붙여넣는 방법을 쓴다
+(Firestore Database → 규칙 → 게시).
 
 ### 배포 (Vercel)
 
