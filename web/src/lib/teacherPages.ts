@@ -96,6 +96,25 @@ export async function listTeacherPages(): Promise<TeacherPage[]> {
 }
 
 /**
+ * 공개 여부와 무관하게 전부. 반의 담당 교사를 고를 때 쓴다.
+ *
+ * `published` 는 학생용 홈에 뜰지를 정하는 값이라, 꺼둔 교사도 동료가 담당으로
+ * 지정할 수 있어야 한다. 자기 페이지를 아직 안 만든 교사는 여기 안 나온다 —
+ * 그 경우 먼저 교사 페이지에서 주소를 정하라고 안내하면 된다.
+ */
+export async function listAllTeacherPages(): Promise<TeacherPage[]> {
+  const found = await getDocs(collection(db, ...wsPath('teacherPages')))
+  return found.docs
+    .map((snapshot) => ({
+      slug: snapshot.id,
+      uid: snapshot.data().uid,
+      displayName: snapshot.data().displayName ?? '',
+      published: snapshot.data().published ?? false,
+    }))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName, 'ko'))
+}
+
+/**
  * 저장. 슬러그를 바꾼 경우 새 문서를 먼저 만들고 옛 문서를 지운다.
  *
  * 순서가 중요하다. 옛 문서를 먼저 지웠는데 새 문서 생성이 거부되면(남이 이미

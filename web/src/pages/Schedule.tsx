@@ -22,6 +22,7 @@ import {
   type TimetableCell,
   type TimetableData,
 } from '../lib/timetable'
+import ClassRecords from './ClassRecords'
 import { Centered, GoogleMark } from './Teacher'
 
 /**
@@ -114,15 +115,7 @@ function ScheduleTabs() {
         </button>
       </nav>
 
-      {section === 'grid' ? (
-        <TimetableBoard />
-      ) : (
-        <section className="rounded-2xl border border-dashed border-line p-8 text-center text-sm leading-relaxed text-muted">
-          반별 학생 명단과 날짜별 참여 기록이 여기 들어옵니다.
-          <br />
-          4단계에서 만듭니다.
-        </section>
-      )}
+      {section === 'grid' ? <TimetableBoard /> : <ClassRecords />}
     </div>
   )
 }

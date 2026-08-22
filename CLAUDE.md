@@ -14,7 +14,7 @@
 
 ## 0. 지금까지 온 곳 / 다음 할 일
 
-**1단계(골격) · 2단계(로그인 + 멤버) · 3단계(시간표) 완료.** 앱은 `web/` 아래에 있다.
+**1~4단계 완료**(골격 / 로그인·멤버 / 시간표 / 반 명단·수업기록). 앱은 `web/` 아래에 있다.
 
 ```
 web/src/index.css          Pretendard @font-face + @theme 색 토큰
@@ -26,6 +26,8 @@ web/src/lib/firebase.ts    Auth + Firestore (Storage 는 안 쓴다)
 web/src/lib/workspace.ts   WS_ID 상수 + wsPath() 헬퍼
 web/src/lib/teacherPages.ts  내 수업 주소(슬러그) 저장·조회
 web/src/lib/timetable.ts   시간표 — timetables/{uid}
+web/src/lib/classRecords.ts  반 명단(공용) + 참여 기록(교사별)
+web/src/pages/ClassRecords.tsx  수업기록 화면
 web/src/pages/Schedule.tsx 일정 (시간표 + 기록 탭)
 web/src/pages/Teacher.tsx  로그인 / 미등록(uid 표시) / 대시보드
 web/src/pages/*.tsx        Home 과 Teacher 외에는 자리표시
@@ -33,9 +35,9 @@ web/public/fonts/          woff2 서브셋 4종 + OFL 원문
 firestore.rules            권한 규칙 (루트 — 앱 코드가 아니다)
 ```
 
-**다음은 4단계(반 명단 + 수업기록)** — 명세 7절 순서 그대로.
-시작 전에 사용자에게 물을 것이 하나 있다: 참여 기록(`dates`)도 담당 교사끼리
-공유할지(명세 4.5절).
+**다음은 5단계(과목 + 수업자료 + 핀 게이트)** — 명세 7절 순서 그대로.
+여기서 학생 쪽 `/t/{슬러그}` 라우팅도 함께 붙인다(명세 4.6절).
+`chunkedFile.ts` 이식이 들어가므로 무료 플랜의 1GiB 한도를 염두에 둘 것.
 
 Firebase 쪽은 이미 살아 있다 — 프로젝트 `charim-b2c13`, 규칙 배포됨(CLI),
 소유자 멤버 문서 등록됨, 교사 페이지 슬러그와 시간표 저장까지 실제로 확인했다.
@@ -417,7 +419,7 @@ CHICODE의 `src/content/PrivacyPolicy.tsx`는 **"담당 교사가 자기 학생�
 1. ~~**프로젝트 골격**~~ — 완료
 2. **로그인 + 멤버** — `firebase.ts` 이식, `isMember()` 규칙, workspace 상수 고정
 3. **시간표(교사별)** — 개인정보가 없어서 가장 먼저 실물이 나온다
-4. **반 명단 + 수업기록** — `classRecords.ts` 이식 + 명단을 학교 공용으로 분리
+4. ~~**반 명단 + 수업기록**~~ — 완료. 명단은 담당 교사 공용, 기록은 교사별
 5. **과목 + 수업자료 + 핀 게이트**
 6. **수업내용 보드** — `labs.ts` + `LabBoardEditor` 이식
 7. **발표 모드**
