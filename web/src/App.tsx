@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 
 import { useAuth } from './auth/AuthProvider'
 import Logo from './components/Logo'
@@ -113,13 +113,6 @@ export default function App() {
             시행일 {openPolicy === 'privacy' ? PRIVACY_POLICY_EFFECTIVE_DATE : TERMS_OF_SERVICE_EFFECTIVE_DATE}
           </p>
           {openPolicy === 'privacy' ? <PrivacyPolicy /> : <TermsOfService />}
-          <Link
-            to={openPolicy === 'privacy' ? '/privacy' : '/terms'}
-            onClick={() => setOpenPolicy(null)}
-            className="mt-6 inline-block text-xs font-semibold text-primary hover:underline"
-          >
-            전용 주소로 보기
-          </Link>
         </Modal>
       )}
     </div>
