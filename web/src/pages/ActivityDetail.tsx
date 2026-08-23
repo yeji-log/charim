@@ -94,14 +94,22 @@ export default function ActivityDetail() {
 }
 
 function SectionView({ section, activityId }: { section: Section; activityId: string }) {
+  // 수업자료 항목은 제목을 스스로 그린다 — 제목과 발표 버튼이 한 줄에
+  // 있어야 해서, 제목을 여기서 그리면 버튼이 그 아래로 밀린다.
+  if (section.kind === 'slides') {
+    return (
+      <section className="rounded-2xl border border-line bg-surface p-6">
+        <SlideSection activityId={activityId} title={section.title} />
+      </section>
+    )
+  }
+
   return (
     <section className="rounded-2xl border border-line bg-surface p-6">
       {section.title && <h2 className="text-lg font-bold text-text">{section.title}</h2>}
 
       <div className="mt-3">
-        {section.kind === 'slides' ? (
-          <SlideSection activityId={activityId} />
-        ) : section.kind === 'checklist' ? (
+        {section.kind === 'checklist' ? (
           <ChecklistView items={section.items ?? []} />
         ) : section.isCode ? (
           <CodeBlock content={section.content} />

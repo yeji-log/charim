@@ -31,7 +31,14 @@ import { getNotes, getSlidePdfFile, getSlidePptxFile, getSlideSet } from '../lib
  * 파일은 항목이 화면에 나타나면 **바로 내려받는다.** 예전엔 "수업 자료 보기"
  * 버튼을 눌러야 했는데, 수업 중에 한 번 더 누르게 하는 비용이 더 크다.
  */
-export default function SlideSection({ activityId }: { activityId: string }) {
+export default function SlideSection({
+  activityId,
+  title,
+}: {
+  activityId: string
+  /** 항목 제목("수업자료"). 발표 버튼과 한 줄에 놓으려고 여기서 그린다. */
+  title?: string
+}) {
   const { state: authState } = useAuth()
   const isTeacher = authState === 'teacher'
 
@@ -86,46 +93,59 @@ export default function SlideSection({ activityId }: { activityId: string }) {
     if (presentation?.active) setBrowsePage(presentation.currentSlide)
   }, [presentation?.active, presentation?.currentSlide])
 
-  if (has === null) return <p className="text-sm text-muted">확인 중…</p>
+  const active = presentation?.active ?? false
+
+  /**
+   * 제목과 발표 버튼을 한 줄에 둔다. 상태에 따라 오른쪽 내용만 바뀐다 —
+   * 자료가 없거나 아직 여는 중이면 그 안내가, 준비되면 버튼이 들어간다.
+   */
+  const header = (right: React.ReactNode) => (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      {title && <h2 className="text-lg font-bold text-text">{title}</h2>}
+      {right}
+    </div>
+  )
+
+  if (has === null) return header(<span className="text-sm text-muted">확인 중…</span>)
 
   if (!has.pptx && !has.pdf) {
-    return <p className="text-sm text-muted">아직 올라온 수업 자료가 없습니다.</p>
+    return header(<span className="text-sm text-muted">아직 올라온 수업 자료가 없습니다.</span>)
   }
 
-  if (!files) return <p className="text-sm text-muted">여는 중…</p>
-
-  const active = presentation?.active ?? false
+  if (!files) return header(<span className="text-sm text-muted">여는 중…</span>)
 
   return (
     <div className="flex flex-col gap-3">
-      {isTeacher && (
-        <div className="flex flex-wrap items-center gap-2">
-          {active && (
-            <span className="rounded-md bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
-              발표 중 · {presentation?.currentSlide} 쪽
-            </span>
-          )}
-
-          {/* 버튼은 오른쪽 끝으로 민다. 상태 배지는 왼쪽에 남는다 — 좁은
-              화면에서 줄이 바뀌면 ml-auto 가 무의미해지므로 감싸는 div 에
-              건다(각 버튼에 걸면 줄바꿈 시 서로 떨어진다). */}
-          <div className="ml-auto flex flex-wrap items-center gap-2">
+      {header(
+        isTeacher ? (
+          <>
             {active && (
-              <button
-                onClick={() => void stopPresentation(activityId)}
-                className="rounded-lg border border-error px-3 py-2 text-sm font-semibold text-error transition-colors hover:bg-error hover:text-white"
-              >
-                발표 끝내기
-              </button>
+              <span className="rounded-md bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
+                발표 중 · {presentation?.currentSlide} 쪽
+              </span>
             )}
-            <button
-              onClick={() => setPresenterOpen(true)}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
-            >
-              {active ? '발표 제어하기' : '발표 화면 열기'}
-            </button>
-          </div>
-        </div>
+
+            {/* 버튼은 오른쪽 끝으로 민다. 각 버튼에 ml-auto 를 걸면 좁은
+                화면에서 줄이 바뀔 때 서로를 밀어내 흩어지므로 감싸는 div 에
+                건다. */}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              {active && (
+                <button
+                  onClick={() => void stopPresentation(activityId)}
+                  className="rounded-lg border border-error px-3 py-2 text-sm font-semibold text-error transition-colors hover:bg-error hover:text-white"
+                >
+                  발표 끝내기
+                </button>
+              )}
+              <button
+                onClick={() => setPresenterOpen(true)}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+              >
+                {active ? '발표 제어하기' : '발표 화면 열기'}
+              </button>
+            </div>
+          </>
+        ) : null,
       )}
 
       {/* 평소 뷰어. 발표 중에는 전체화면이 덮는다. */}
