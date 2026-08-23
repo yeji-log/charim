@@ -63,10 +63,13 @@ export default function SlideSection({
         if (loadingRef.current) return
 
         loadingRef.current = true
+        // 대본(notes)은 교사만 가져온다 — firestore.rules 가 이 문서 자체를
+        // isMember() 로 막아뒀으니 학생이 읽으면 어차피 거부되지만, 거부될
+        // 요청을 아예 보내지 않는 편이 깔끔하다.
         const [pptx, pdf, loadedNotes] = await Promise.all([
           exists.pptx ? getSlidePptxFile(activityId) : Promise.resolve(null),
           exists.pdf ? getSlidePdfFile(activityId) : Promise.resolve(null),
-          getNotes(activityId),
+          isTeacher ? getNotes(activityId) : Promise.resolve([]),
         ])
         if (cancelled) return
         setFiles({ pptx, pdf })
@@ -83,7 +86,7 @@ export default function SlideSection({
     return () => {
       cancelled = true
     }
-  }, [activityId])
+  }, [activityId, isTeacher])
 
   useEffect(() => subscribePresentation(activityId, setPresentation), [activityId])
 

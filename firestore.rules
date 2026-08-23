@@ -116,24 +116,28 @@ service cloud.firestore {
         allow write: if isMember();
       }
 
-      // 발표자료. 학생 화면이 그려야 하므로 읽기는 공개다 — 파일 본문(chunks)
-      // 까지 포함해서. "학생이 원본을 못 받는다"는 건 화면에서 다운로드 링크를
-      // 만들지 않는 수준의 가벼운 방지이지 규칙으로 막는 게 아니다(slides.ts).
+      // 발표자료. 문서 본문(대본/notes)과 파일(files 서브컬렉션)의 읽기 권한을
+      // 일부러 가른다 — 학생 화면은 files 만 있으면 그려지고, 대본은 교사가
+      // 발표 중에 보는 메모라 학생에게 보일 이유가 없다.
       //
-      // 대본(notes)은 문서 본문에 있어서 이 읽기 허용에 함께 걸린다. 교사가
-      // 발표 중에 볼 메모라 학생에게 보일 이유는 없지만, 학생이 로그인하지
-      // 않으므로 규칙으로 가를 방법이 없다 — 핀과 같은 트레이드오프다.
-      // **대본에 학생 개인정보나 평가 내용을 적지 않도록 화면에서 안내한다.**
+      // 전에는 문서 본문까지 공개였다("학생이 로그인하지 않으니 규칙으로
+      // 못 가른다"는 핀과 같은 트레이드오프로 취급했다). 그런데 대본은
+      // notes 필드 하나뿐이고 학생 화면이 이 문서 자체를 읽을 필요가 없다는
+      // 걸 다시 확인해서(slides.ts, SlideSection.tsx), 굳이 공개로 둘 이유가
+      // 없었다 — 그래서 진짜로 막았다.
       match /slides/{activityId} {
-        allow read: if true;
+        allow read: if isMember();
         allow write: if isMember();
 
-        // 규칙은 하위 컬렉션으로 상속되지 않는다. files 와 그 아래 chunks 를
-        // 빠뜨리면 발표자료 파일이 무방비로 열린다(쓰기 기준).
+        // 규칙은 하위 컬렉션으로 상속되지 않는다 — files 는 부모와 별개로
+        // 공개다. "학생이 원본을 못 받는다"는 건 화면에서 다운로드 링크를
+        // 만들지 않는 수준의 가벼운 방지이지 규칙으로 막는 게 아니다(slides.ts).
         match /files/{fileId} {
           allow read: if true;
           allow write: if isMember();
 
+          // chunks 도 상속되지 않는다. 빠뜨리면 발표자료 파일이 무방비로
+          // 열린다(쓰기 기준).
           match /chunks/{chunkIndex} {
             allow read: if true;
             allow write: if isMember();
