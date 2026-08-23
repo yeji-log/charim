@@ -5,6 +5,7 @@ import { useAuth } from '../auth/AuthProvider'
 import { CharimSymbol } from '../components/Logo'
 import { CopyBox } from './Teacher'
 import { hasDateRecord, listClasses, todayLocal, type ClassMeta } from '../lib/classRecords'
+import { getMyClub, type ClubMeta } from '../lib/clubs'
 import { listCoursesByTeacher, type CourseMeta } from '../lib/courses'
 import { getMyTeacherPage, listTeacherPages, type TeacherPage } from '../lib/teacherPages'
 import {
@@ -116,6 +117,7 @@ function TeacherHome() {
   const [timetable, setTimetable] = useState<TimetableData | null>(null)
   const [courses, setCourses] = useState<CourseMeta[]>([])
   const [myPage, setMyPage] = useState<TeacherPage | null>(null)
+  const [myClub, setMyClub] = useState<ClubMeta | null>(null)
   const [classes, setClasses] = useState<ClassMeta[]>([])
   const [loadError, setLoadError] = useState(false)
   /** 반 id -> 오늘 기록 문서가 있는지. 아직 확인 전이면 키가 없다. */
@@ -130,13 +132,16 @@ function TeacherHome() {
       listCoursesByTeacher(uid),
       getMyTeacherPage(uid),
       listClasses(uid),
+      // 동아리는 문서 id 가 곧 uid 라 질의 없이 하나 읽으면 된다.
+      getMyClub(uid),
     ])
-      .then(([loadedTimetable, loadedCourses, loadedPage, loadedClasses]) => {
+      .then(([loadedTimetable, loadedCourses, loadedPage, loadedClasses, loadedClub]) => {
         if (cancelled) return
         setTimetable(loadedTimetable)
         setCourses(loadedCourses)
         setMyPage(loadedPage)
         setClasses(loadedClasses)
+        setMyClub(loadedClub)
       })
       .catch((caught) => {
         if (cancelled) return
@@ -352,7 +357,7 @@ function TeacherHome() {
 
       <section>
         <div className="flex flex-wrap items-baseline gap-x-3">
-          <h2 className="text-lg font-bold text-text">내 수업</h2>
+          <h2 className="text-lg font-bold text-text">내 수업과 동아리</h2>
           <Link
             to="/teacher"
             className="ml-auto text-sm font-semibold text-primary hover:underline"
@@ -361,9 +366,9 @@ function TeacherHome() {
           </Link>
         </div>
 
-        {courses.length === 0 ? (
+        {courses.length === 0 && !myClub ? (
           <p className="mt-3 rounded-2xl border border-dashed border-line p-8 text-center text-sm text-muted">
-            아직 만든 수업이 없습니다.{' '}
+            아직 만든 수업이나 동아리가 없습니다.{' '}
             <Link to="/teacher" className="font-semibold text-primary underline">
               교사 페이지에서 만들기
             </Link>
@@ -374,7 +379,7 @@ function TeacherHome() {
               <Link
                 key={course.id}
                 to={`/materials/${course.id}`}
-                className="flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:border-secondary"
+                className={chipClass}
               >
                 {course.name}
                 {!course.published && (
@@ -382,6 +387,21 @@ function TeacherHome() {
                 )}
               </Link>
             ))}
+
+            {/* 동아리도 같은 줄에 둔다. 하나뿐이라 따로 구역을 만들면 제목만
+                큼직하고 내용은 칩 한 개인 화면이 된다. 대신 무엇인지 알 수
+                있게 이름 앞에 표를 붙인다. */}
+            {myClub && (
+              <Link to={`/club/${myClub.id}`} className={chipClass}>
+                <span className="rounded-md bg-primary-tint px-1.5 py-0.5 text-xs font-bold text-primary-dark">
+                  동아리
+                </span>
+                {myClub.name}
+                {!myClub.published && (
+                  <span className="text-xs font-normal text-secondary">준비 중</span>
+                )}
+              </Link>
+            )}
           </div>
         )}
 
@@ -414,6 +434,9 @@ function TeacherHome() {
     </div>
   )
 }
+
+const chipClass =
+  'flex items-center gap-2 rounded-xl border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:border-secondary'
 
 function QuickLink({
   to,
