@@ -25,7 +25,6 @@ export default function ActivityList() {
         courseId: scope.courseId,
         seasonId: seasonId || undefined,
         publishedOnly: !isTeacher,
-        includePreparingSeason: isTeacher,
       }),
       listSeasons(scope.courseId ? { courseId: scope.courseId } : undefined),
     ])
@@ -46,6 +45,12 @@ export default function ActivityList() {
   }, [scope.courseId, seasonId, isTeacher])
 
   const seasonTitle = (id: string) => seasons.find((season) => season.id === id)?.title ?? ''
+
+  // 지금 고른 시즌 자체가 준비중이면 학생에게는 "잠긴 미리보기"로 그린다 —
+  // 개별 published 값과 무관하게 이 시즌의 활동 전부가 대상이다(lessons.ts
+  // listActivities 참고). 교사는 항상 평소 목록 그대로 본다.
+  const currentSeason = seasonId ? seasons.find((season) => season.id === seasonId) : undefined
+  const seasonPreparing = !isTeacher && currentSeason?.status === '준비중'
 
   return (
     <div className="flex flex-col gap-4">
@@ -72,6 +77,26 @@ export default function ActivityList() {
         <p className="rounded-2xl border border-dashed border-line p-10 text-center text-sm text-muted">
           아직 {scope.activityNoun}이(가) 없습니다.
         </p>
+      ) : seasonPreparing ? (
+        <>
+          <p className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm text-text">
+            🔒 아직 준비 중인 {scope.seasonNoun}예요. 어떤 {scope.activityNoun}이 있는지만 미리
+            볼 수 있고, 열리면 들어갈 수 있습니다.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {activities.map((activity, index) => (
+              <div
+                key={activity.id}
+                className="rounded-2xl border border-dashed border-line bg-surface/60 p-5"
+              >
+                <p className="font-bold text-text">
+                  {index + 1}) {activity.title}
+                </p>
+                <p className="mt-2 text-xs font-semibold text-warning">🔒 준비중</p>
+              </div>
+            ))}
+          </div>
+        </>
       ) : (
         <ul className="flex flex-col gap-3">
           {activities.map((activity) => (

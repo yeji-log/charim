@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import SlideSection from '../components/SlideSection'
 import { useLessonScope } from '../lib/lessonScope'
-import { getActivity, type Activity, type Section } from '../lib/lessons'
+import { getActivity, getSeason, type Activity, type Section } from '../lib/lessons'
 
 /** 수업 내용 상세. 항목 배열을 순서대로 그린다. */
 export default function ActivityDetail() {
@@ -15,6 +15,9 @@ export default function ActivityDetail() {
 
   const [activity, setActivity] = useState<Activity | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'missing'>('loading')
+  // 소속 시즌 자체가 준비중인지. ActivityList.tsx 의 잠긴 미리보기 목록과
+  // 같은 기준으로, 개별 published 값과 무관하게 이걸로 막는다.
+  const [seasonPreparing, setSeasonPreparing] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -22,10 +25,19 @@ export default function ActivityDetail() {
     setStatus('loading')
 
     getActivity(id)
-      .then((found) => {
+      .then(async (found) => {
+        if (cancelled) return
+        if (!found) {
+          setActivity(null)
+          setStatus('missing')
+          return
+        }
+        const season =
+          !isTeacher && found.seasonId ? await getSeason(found.seasonId) : null
         if (cancelled) return
         setActivity(found)
-        setStatus(found ? 'ready' : 'missing')
+        setSeasonPreparing(season?.status === '준비중')
+        setStatus('ready')
       })
       .catch((caught) => {
         if (cancelled) return
@@ -36,13 +48,45 @@ export default function ActivityDetail() {
     return () => {
       cancelled = true
     }
-  }, [id])
+  }, [id, isTeacher])
 
   if (status === 'loading') return <p className="text-muted">불러오는 중…</p>
 
-  // 준비 중인 내용은 교사에게만 보인다. 학생에게는 없는 것과 같게 다룬다 —
-  // "준비 중입니다"라고 알려주면 목록에 없는 내용의 존재가 드러난다.
-  if (status === 'missing' || !activity || (!activity.published && !isTeacher)) {
+  if (status === 'missing' || !activity) {
+    return (
+      <div className="rounded-2xl border border-line bg-surface p-10 text-center">
+        <p className="font-bold text-text">찾는 {scope.activityNoun}이(가) 없습니다.</p>
+        <Link
+          to={scope.activitiesPath}
+          className="mt-4 inline-block text-sm font-semibold text-primary underline"
+        >
+          목록으로
+        </Link>
+      </div>
+    )
+  }
+
+  // 시즌 자체가 준비중이면 목록(ActivityList.tsx)에서 이미 "잠긴 미리보기"로
+  // 존재를 알려준 상태다 — 그래서 여기서도 같은 사실을 그대로 알려준다.
+  if (!isTeacher && seasonPreparing) {
+    return (
+      <div className="rounded-2xl border border-warning/40 bg-warning/10 p-10 text-center">
+        <p className="font-bold text-text">🔒 아직 준비 중인 {scope.seasonNoun}예요.</p>
+        <p className="mt-1 text-sm text-muted">열리면 들어갈 수 있습니다.</p>
+        <Link
+          to={scope.activitiesPath}
+          className="mt-4 inline-block text-sm font-semibold text-primary underline"
+        >
+          목록으로
+        </Link>
+      </div>
+    )
+  }
+
+  // 시즌은 준비중이 아니지만 이 활동 하나만 비공개인 경우, 학생에게는 없는
+  // 것과 같게 다룬다 — "준비 중입니다"라고 알려주면 목록에 없는 내용의 존재가
+  // 드러난다(시즌 단위 잠금과 달리 목록에도 안 보이는 상태이기 때문).
+  if (!isTeacher && !activity.published) {
     return (
       <div className="rounded-2xl border border-line bg-surface p-10 text-center">
         <p className="font-bold text-text">찾는 {scope.activityNoun}이(가) 없습니다.</p>

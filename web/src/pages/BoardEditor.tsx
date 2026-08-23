@@ -66,7 +66,7 @@ export default function BoardEditor({
   const reload = useCallback(async () => {
     const [loadedSeasons, loadedActivities] = await Promise.all([
       listSeasons(courseId ? { courseId } : undefined),
-      listActivities({ courseId, includePreparingSeason: true }),
+      listActivities({ courseId }),
     ])
     setSeasons(loadedSeasons)
     setActivities(loadedActivities)

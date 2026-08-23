@@ -30,17 +30,15 @@ export default function Roadmap() {
 
     Promise.all([
       listSeasons(scope.courseId ? { courseId: scope.courseId } : undefined),
-      listActivities({
-        courseId: scope.courseId,
-        publishedOnly: !isTeacher,
-        includePreparingSeason: isTeacher,
-      }),
+      listActivities({ courseId: scope.courseId, publishedOnly: !isTeacher }),
     ])
       .then(([loadedSeasons, loadedActivities]) => {
         if (cancelled) return
-        // 준비 중인 시즌은 학생에게 숨긴다 — 카드가 보이는데 들어가면 빈
-        // 목록이 나오는 것보다 아예 안 보이는 편이 낫다.
-        setSeasons(isTeacher ? loadedSeasons : loadedSeasons.filter((s) => s.status !== '준비중'))
+        // 준비 중인 시즌도 카드는 보여준다 — 어떤 목차가 있는지는 미리 알 수
+        // 있고, 들어가면 잠긴 미리보기 목록이 나온다(ActivityList.tsx). 다만
+        // 이 activities 목록은 학생 기준으로는 준비중 시즌의 활동을 빼고
+        // 왔으므로(lessons.ts), 아래 개수 표시에서 그 사실을 감안한다.
+        setSeasons(loadedSeasons)
         setActivities(loadedActivities)
       })
       .catch((caught) => {
@@ -68,6 +66,10 @@ export default function Roadmap() {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {seasons.map((season) => {
         const count = activities.filter((activity) => activity.seasonId === season.id).length
+        // 학생 기준 activities 는 준비중 시즌의 활동을 빼고 온다(lessons.ts) —
+        // 그래서 실제로는 내용이 있어도 여기선 0개로 보인다. "0개"라고 잘못
+        // 알리는 대신 준비중이라는 사실 자체를 보여준다.
+        const preparing = !isTeacher && season.status === '준비중'
         return (
           <Link
             key={season.id}
@@ -87,7 +89,7 @@ export default function Roadmap() {
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{season.description}</p>
             )}
             <p className="mt-3 text-xs text-muted">
-              {scope.activityNoun} {count}개
+              {preparing ? '🔒 준비 중 — 눌러서 미리 보기' : `${scope.activityNoun} ${count}개`}
             </p>
           </Link>
         )

@@ -187,18 +187,17 @@ export async function deleteSeason(id: string): Promise<void> {
   await deleteDoc(seasonRef(id))
 }
 
+export async function getSeason(id: string): Promise<Season | null> {
+  const snapshot = await getDoc(seasonRef(id))
+  return snapshot.exists() ? ({ id: snapshot.id, ...snapshot.data() } as Season) : null
+}
+
 // ── 활동 (과목에서는 "수업 내용") ───────────────────────────────
 
 export async function listActivities(opts?: {
   seasonId?: string
   publishedOnly?: boolean
   courseId?: string
-  /**
-   * 준비 중인 시즌의 활동도 포함한다. 로그인한 교사가 미리 볼 때만 켠다 —
-   * 학생에게는 로드맵에 안 보이는 시즌인데 목록으로는 열리는 게 앞뒤가 맞지
-   * 않는다.
-   */
-  includePreparingSeason?: boolean
 }): Promise<Activity[]> {
   const snapshot = opts?.seasonId
     ? await getDocs(query(activitiesRef(), where('seasonId', '==', opts.seasonId)))
@@ -215,17 +214,28 @@ export async function listActivities(opts?: {
   }
 
   if (opts?.publishedOnly) {
-    activities = activities.filter((activity) => activity.published)
+    // 시즌 하나만 딱 집어 보는 중이고 그 시즌 자체가 준비중이면, 개별
+    // published 값과 상관없이 전부 돌려준다. 시즌이 통째로 준비중이라고 이미
+    // 알려준 마당에(Roadmap.tsx 카드) 그 안의 활동을 또 하나씩 숨기면 앞뒤가
+    // 안 맞는다 — 화면은 이걸 "잠긴 미리보기" 목록으로 그린다
+    // (ActivityList.tsx, ActivityDetail.tsx).
+    const viewingSeason = opts.seasonId ? await getSeason(opts.seasonId) : null
 
-    if (!(opts.seasonId && opts.includePreparingSeason)) {
-      // 시즌 목록도 **같은 스코프로** 불러야 한다. 안 그러면 과목 스코프에서
-      // 이 필터가 동아리 시즌만 보고 조용히 무력화된다.
-      const preparing = new Set(
-        (await listSeasons(opts.courseId ? { courseId: opts.courseId } : undefined))
-          .filter((season) => season.status === '준비중')
-          .map((season) => season.id),
-      )
-      activities = activities.filter((activity) => !preparing.has(activity.seasonId))
+    if (viewingSeason?.status !== '준비중') {
+      activities = activities.filter((activity) => activity.published)
+
+      if (!opts.seasonId) {
+        // 시즌 필터가 없는 전체 목록(예: "전체" 탭)에서는 준비중 시즌의
+        // 활동을 통째로 뺀다. 시즌 목록도 **같은 스코프로** 불러야 한다 —
+        // 안 그러면 과목 스코프에서 이 필터가 동아리 시즌만 보고 조용히
+        // 무력화된다.
+        const preparing = new Set(
+          (await listSeasons(opts.courseId ? { courseId: opts.courseId } : undefined))
+            .filter((season) => season.status === '준비중')
+            .map((season) => season.id),
+        )
+        activities = activities.filter((activity) => !preparing.has(activity.seasonId))
+      }
     }
   }
 
