@@ -108,6 +108,7 @@ export default function App() {
         <Modal
           title={openPolicy === 'privacy' ? '개인정보처리방침' : '이용약관'}
           onClose={() => setOpenPolicy(null)}
+          wide
         >
           <p className="mb-4 text-xs text-muted">
             시행일 {openPolicy === 'privacy' ? PRIVACY_POLICY_EFFECTIVE_DATE : TERMS_OF_SERVICE_EFFECTIVE_DATE}
