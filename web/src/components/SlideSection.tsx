@@ -21,7 +21,7 @@ import { getNotes, getSlidePdfFile, getSlidePptxFile, getSlideSet } from '../lib
  *   평소            그냥 넘겨보는 뷰어
  *   발표 중         전체화면 슬라이드(교사 화면도 같다) + 교사에게만
  *                   "발표 제어하기" 버튼
- *   교사가 제어 중  SlidePresenter 전체화면(대본·펜·조작)
+ *   교사가 제어 중  SlidePresenter 전체화면(발표자 노트·펜·조작)
  *
  * 교사가 발표 화면을 닫아도 방송은 계속되고, 그때 교사도 학생과 같은 화면을
  * 보게 된다 — 발표가 안 끊겼다는 걸 스스로 확인할 수 있고 "발표 제어하기"로
@@ -65,7 +65,7 @@ export default function SlideSection({
         if (loadingRef.current) return
 
         loadingRef.current = true
-        // 대본(notes)은 교사만 가져온다 — firestore.rules 가 이 문서 자체를
+        // 발표자 노트(notes)는 교사만 가져온다 — firestore.rules 가 이 문서 자체를
         // isMember() 로 막아뒀으니 학생이 읽으면 어차피 거부되지만, 거부될
         // 요청을 아예 보내지 않는 편이 깔끔하다.
         const [pptx, pdf, loadedNotes] = await Promise.all([

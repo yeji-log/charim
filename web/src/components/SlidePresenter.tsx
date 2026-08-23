@@ -67,7 +67,7 @@ export default function SlidePresenter({
   const saveTimerRef = useRef<number | undefined>(undefined)
   const pendingRef = useRef<{ slide: number; text: string } | null>(null)
   // effect 안에서 최신 notes 를 읽기 위한 것 — notes 를 의존성에 넣으면
-  // 저장이 돌아올 때마다 효과가 다시 돌면서 입력 중인 대본을 덮어쓴다.
+  // 저장이 돌아올 때마다 효과가 다시 돌면서 입력 중인 발표자 노트를 덮어쓴다.
   const notesRef = useRef(notes)
   useEffect(() => {
     notesRef.current = notes
@@ -96,12 +96,12 @@ export default function SlidePresenter({
     const { slide: pendingSlide, text } = pendingRef.current
     pendingRef.current = null
     void updateNote(activityId, pendingSlide, text).catch((caught) =>
-      console.error('대본 저장 실패', caught),
+      console.error('발표자 노트 저장 실패', caught),
     )
     onNoteSaved(pendingSlide, text)
   }
 
-  // 슬라이드가 바뀌면 이전 쪽의 미저장 편집을 흘려보내고 새 쪽 대본을 띄운다.
+  // 슬라이드가 바뀌면 이전 쪽의 미저장 편집을 흘려보내고 새 쪽 발표자 노트를 띄운다.
   useEffect(() => {
     flushPending()
     setNoteDraft(notesRef.current[slide - 1] ?? '')
@@ -131,7 +131,7 @@ export default function SlidePresenter({
   }
 
   // 방향키·Space 로 넘긴다. 리모컨(프레젠터)도 대개 이 신호를 보낸다.
-  // **대본을 타이핑하는 중에는 가로채면 안 된다** — 스페이스를 치면 슬라이드가
+  // **발표자 노트를 타이핑하는 중에는 가로채면 안 된다** — 스페이스를 치면 슬라이드가
   // 그냥 넘어가 버린다.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -252,7 +252,7 @@ export default function SlidePresenter({
         </div>
       </header>
 
-      {/* 펜이 켜져 있는 동안은 대본보다 그릴 공간이 급하다 — 대본 패널을
+      {/* 펜이 켜져 있는 동안은 발표자 노트보다 그릴 공간이 급하다 — 발표자 노트 패널을
           잠시 접고 슬라이드가 전체 폭을 쓰게 한다. */}
       <div
         className={
@@ -296,10 +296,10 @@ export default function SlidePresenter({
             {/* 한때 여기에 "개인정보는 적지 마세요"를 붙여뒀었다. slides 문서가
                 공개 읽기라 화면에만 안 뜰 뿐 개발자도구로는 조회됐기 때문이다.
                 지금은 그 문서의 읽기가 isMember() 로 좁혀져 규칙이 실제로 막으므로
-                경고를 뺐다 — 막아놓고도 겁을 주면 교사가 대본을 안 쓴다.
+                경고를 뺐다 — 막아놓고도 겁을 주면 교사가 발표자 노트를 안 쓴다.
                 **slides 문서 읽기를 다시 공개로 열면 이 경고를 되살릴 것.** */}
             <label className="text-sm font-semibold text-white/70">
-              대본 <span className="font-normal text-white/40">(학생 화면엔 안 보입니다)</span>
+              발표자 노트 <span className="font-normal text-white/40">(학생 화면엔 안 보입니다)</span>
             </label>
             <textarea
               value={noteDraft}

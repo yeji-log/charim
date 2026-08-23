@@ -11,7 +11,7 @@
  * 같이 올릴 수 있게 한다. 학생 화면은 pptx 를 먼저 시도하고 실패하면 조용히
  * PDF 로 넘어간다(SlideViewer.tsx).
  *
- * PPT 를 올리는 값어치는 **발표자 노트를 자동으로 뽑아 대본을 만들어 주는 것**
+ * PPT 를 올리는 값어치는 **발표자 노트를 자동으로 뽑아 주는 것**
  * 이다(pptxNotes.ts). 노트 추출은 렌더링과 달리 해석의 여지가 없는 XML 파싱이라
  * 믿을 만하다.
  *
@@ -20,7 +20,7 @@
  * 화면에 그리는 용도로만 메모리에 올린다. 핀과 같은 수준의 "가벼운" 방지다 —
  * 화면 캡처까지 막을 수는 없다.
  *
- *   workspaces/{wsId}/slides/{activityId}             대본(슬라이드별 배열)
+ *   workspaces/{wsId}/slides/{activityId}             발표자 노트(슬라이드별 배열)
  *   workspaces/{wsId}/slides/{activityId}/files/pptx  PPT 원본 + chunks
  *   workspaces/{wsId}/slides/{activityId}/files/pdf   미리보기용 PDF + chunks
  */
@@ -106,7 +106,7 @@ export function deleteSlidePdf(activityId: string): Promise<void> {
   return deleteChunkedFile(pdfRef(activityId))
 }
 
-/** 슬라이드 순서대로 대본. 아직 뽑은 적 없으면 빈 배열. */
+/** 슬라이드 순서대로 발표자 노트. 아직 뽑은 적 없으면 빈 배열. */
 export async function getNotes(activityId: string): Promise<string[]> {
   const snapshot = await getDoc(setDocRef(activityId))
   if (!snapshot.exists()) return []
@@ -117,7 +117,7 @@ export async function saveNotes(activityId: string, notes: string[]): Promise<vo
   await setDoc(setDocRef(activityId), { notes }, { merge: true })
 }
 
-/** 슬라이드 하나의 대본만 고친다 — 발표 중에 손보는 용도. */
+/** 슬라이드 하나의 발표자 노트만 고친다 — 발표 중에 손보는 용도. */
 export async function updateNote(
   activityId: string,
   slideNumber: number,

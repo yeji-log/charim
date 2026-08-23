@@ -23,7 +23,7 @@ import {
  * 버튼을 없애서 헷갈릴 여지를 지웠다.
  *
  * PPT 와 PDF 를 따로 받는다. **둘 다 올리는 걸 권한다:**
- * - PPT 를 올리면 발표자 노트를 자동으로 뽑아 대본을 채워준다
+ * - PPT 를 올리면 발표자 노트를 자동으로 뽑아 채워준다
  * - PDF 는 PPT 렌더링이 깨졌을 때 대신 보여줄 안전망이다(slides.ts 참고)
  */
 export default function SlideUploader({ activityId }: { activityId: string }) {
@@ -61,8 +61,8 @@ export default function SlideUploader({ activityId }: { activityId: string }) {
           const filled = notes.filter((note) => note.trim()).length
           setMessage(
             filled > 0
-              ? `올렸습니다. 발표자 노트 ${filled}쪽 분을 대본으로 가져왔습니다.`
-              : '올렸습니다. PPT 에 발표자 노트가 없어 대본은 비어 있습니다.',
+              ? `올렸습니다. 발표자 노트 ${filled}쪽 분을 가져왔습니다.`
+              : '올렸습니다. PPT 에 발표자 노트가 없어 노트는 비어 있습니다.',
           )
         } catch (caught) {
           console.error('발표자 노트 추출 실패', caught)
@@ -108,7 +108,7 @@ export default function SlideUploader({ activityId }: { activityId: string }) {
         내려받게 하려면 과목의 <strong className="text-text">자료</strong> 탭에 올려 주세요.
       </p>
       <p className="text-xs leading-relaxed text-muted">
-        PPT 와 PDF 를 함께 올리는 것을 권합니다. PPT 에서는 발표자 노트를 대본으로 가져오고,
+        PPT 와 PDF 를 함께 올리는 것을 권합니다. PPT 에서는 발표자 노트를 그대로 가져오고,
         PDF 는 PPT 미리보기가 깨졌을 때 대신 보여줍니다. 최대{' '}
         {formatSize(MAX_SLIDE_FILE_SIZE)}.
       </p>
