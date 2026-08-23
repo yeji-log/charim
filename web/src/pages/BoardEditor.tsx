@@ -17,6 +17,7 @@ import {
   updateSeason,
   type Activity,
   type ChecklistItem,
+  type LessonOwner,
   type Season,
   type Section,
 } from '../lib/lessons'
@@ -41,15 +42,15 @@ const STATUS_STYLE: Record<Season['status'], string> = {
 /**
  * 교사용 수업내용 보드.
  *
- * `courseId` 를 주면 그 과목의 수업목차/내용을, 안 주면 동아리의 시즌/활동을
- * 다룬다 — 화면은 하나이고 스코프만 다르다(lessonScope.ts 와 같은 이유).
+ * `owner` 로 과목의 수업목차/내용인지 동아리의 시즌/활동인지 가른다 — 화면은
+ * 하나이고 스코프만 다르다(lessonScope.ts 와 같은 이유).
  */
 export default function BoardEditor({
-  courseId,
+  owner,
   seasonNoun = '수업목차',
   activityNoun = '수업 내용',
 }: {
-  courseId?: string
+  owner: LessonOwner
   seasonNoun?: string
   activityNoun?: string
 }) {
@@ -65,12 +66,14 @@ export default function BoardEditor({
 
   const reload = useCallback(async () => {
     const [loadedSeasons, loadedActivities] = await Promise.all([
-      listSeasons(courseId ? { courseId } : undefined),
-      listActivities({ courseId }),
+      listSeasons(owner),
+      listActivities({ owner }),
     ])
     setSeasons(loadedSeasons)
     setActivities(loadedActivities)
-  }, [courseId])
+    // owner 는 렌더마다 새 객체다 — 안에 든 값만 의존성으로 쓴다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [owner.courseId, owner.clubId])
 
   useEffect(() => {
     reload().catch((caught) => {
@@ -86,7 +89,7 @@ export default function BoardEditor({
       status: '준비중',
       order: (seasons?.length ?? 0),
       description: '',
-      ...(courseId ? { courseId } : {}),
+      ...owner,
     })
     setSeasons([...(seasons ?? []), created])
     setOpenSeason(created)
@@ -102,7 +105,7 @@ export default function BoardEditor({
       sections: [makeSection('오늘의 목표')],
       materialUrl: '',
       updatedBy: user.uid,
-      ...(courseId ? { courseId } : {}),
+      ...owner,
     })
     setActivities([...activities, created])
     setOpenActivity(created)

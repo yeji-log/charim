@@ -14,7 +14,7 @@ import TeacherPublicPage from './pages/TeacherPublicPage'
 import Roadmap from './pages/Roadmap'
 import ActivityList from './pages/ActivityList'
 import ActivityDetail from './pages/ActivityDetail'
-import Club, { ClubHome } from './pages/Club'
+import Clubs, { ClubGate, ClubHome } from './pages/Club'
 import Schedule from './pages/Schedule'
 import Teacher from './pages/Teacher'
 import TeacherCourseEdit from './pages/TeacherCourseEdit'
@@ -50,7 +50,11 @@ createRoot(document.getElementById('root')!).render(
               <Route path="materials" element={<MaterialsList />} />
             </Route>
 
-            <Route path="club" element={<Club />}>
+            {/* 동아리도 과목과 같은 모양이다 — 목록에서 고르고, 게이트를
+                지나, 같은 화면 셋을 스코프만 바꿔 쓴다. 예전에는 /club 하나가
+                곧 동아리 화면이었다(학교에 동아리가 하나였다). */}
+            <Route path="club" element={<Clubs />} />
+            <Route path="club/:clubId" element={<ClubGate />}>
               <Route index element={<ClubHome />} />
               <Route path="seasons" element={<Roadmap />} />
               <Route path="activities" element={<ActivityList />} />

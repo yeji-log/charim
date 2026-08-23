@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
+import BackLink from '../components/BackLink'
+import PinGate, { GateShell } from '../components/PinGate'
 import TeacherPinBadge from '../components/TeacherPinBadge'
 import { getCourse, type CourseMeta } from '../lib/courses'
-import { usePinAttemptThrottle } from '../lib/pinThrottle'
-import { isPinUnlocked, markPinUnlocked } from '../lib/pinUnlock'
+import { isPinUnlocked } from '../lib/pinUnlock'
 
 /**
  * 과목 게이트.
@@ -64,12 +65,12 @@ export default function CourseGate() {
 
   if (status === 'missing' || !course) {
     return (
-      <Centered>
+      <GateShell>
         <h1 className="text-xl font-bold text-text">과목을 찾을 수 없습니다</h1>
         <Link to="/materials" className="text-sm font-semibold text-primary underline">
           과목 목록으로
         </Link>
-      </Centered>
+      </GateShell>
     )
   }
 
@@ -83,50 +84,58 @@ export default function CourseGate() {
 
   if (!course.published && !isOwner) {
     return (
-      <Centered>
+      <GateShell>
         <h1 className="text-xl font-bold text-text">{course.name}</h1>
         <p className="text-sm text-muted">아직 준비 중인 과목입니다.</p>
         <Link to="/materials" className="text-sm font-semibold text-primary underline">
           과목 목록으로
         </Link>
-      </Centered>
+      </GateShell>
     )
   }
 
   const needsPin = course.pinRequired && !unlocked && !isOwner
 
   if (needsPin) {
-    return <PinGate course={course} onUnlock={() => setUnlocked(true)} />
+    return (
+      <PinGate
+        title={course.name}
+        pin={course.pin}
+        storageKey={`course:${course.id}`}
+        backTo="/materials"
+        backLabel="과목 목록으로"
+        onUnlock={() => setUnlocked(true)}
+      />
+    )
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center gap-3">
-        <div>
-          <p className="text-sm text-muted">
-            <Link to="/materials" className="hover:text-text">
-              수업자료
-            </Link>
-          </p>
+      <div className="flex flex-col gap-3">
+        {/* 과목 밖으로 나가는 길. 안쪽 탭(수업목차·수업 내용·자료) 어디에
+            있어도 게이트가 부모라 계속 보인다. */}
+        <BackLink to="/materials">수업자료</BackLink>
+
+        <header className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-bold tracking-tight text-primary-dark">{course.name}</h1>
-        </div>
 
-        {/* 교사에게만 보이는 핀 배지. 수업 중에 "핀번호 뭐예요?"가 나왔을 때
-            교사 화면까지 되돌아가지 않고 여기서 바로 읽어줄 수 있다. 학생에게는
-            보이지 않는다 — 담당 교사로 로그인해야만 isOwner 가 참이 된다. */}
-        {isOwner && <TeacherPinBadge pinRequired={course.pinRequired} pin={course.pin} />}
+          {/* 교사에게만 보이는 핀 배지. 수업 중에 "핀번호 뭐예요?"가 나왔을 때
+              교사 화면까지 되돌아가지 않고 여기서 바로 읽어줄 수 있다. 학생에게는
+              보이지 않는다 — 담당 교사로 로그인해야만 isOwner 가 참이 된다. */}
+          {isOwner && <TeacherPinBadge pinRequired={course.pinRequired} pin={course.pin} />}
 
-        {course.notionUrl && (
-          <a
-            href={course.notionUrl}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="ml-auto rounded-lg border border-line px-3 py-2 text-sm font-semibold text-muted transition-colors hover:border-secondary hover:text-text"
-          >
-            수업 노트 열기 ↗
-          </a>
-        )}
-      </header>
+          {course.notionUrl && (
+            <a
+              href={course.notionUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="ml-auto rounded-lg border border-line px-3 py-2 text-sm font-semibold text-muted transition-colors hover:border-secondary hover:text-text"
+            >
+              수업 노트 열기 ↗
+            </a>
+          )}
+        </header>
+      </div>
 
       {!course.published && (
         <p className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm text-text">
@@ -146,75 +155,6 @@ export default function CourseGate() {
 
       <Outlet context={{ course } satisfies CourseContext} />
     </div>
-  )
-}
-
-function PinGate({ course, onUnlock }: { course: CourseMeta; onUnlock: () => void }) {
-  // 게이트마다 저장 키를 나눈다 — 한 과목에서 틀렸다고 다른 과목까지 잠기면 안 된다.
-  const throttle = usePinAttemptThrottle(`course:${course.id}`)
-  const [value, setValue] = useState('')
-  const [wrong, setWrong] = useState(false)
-
-  const submit = useCallback(
-    (event: FormEvent) => {
-      event.preventDefault()
-      if (throttle.isLocked || throttle.isBusy) return
-
-      if (value.trim() === course.pin.trim()) {
-        throttle.reset()
-        markPinUnlocked(`course:${course.id}`, course.pin)
-        onUnlock()
-        return
-      }
-      setWrong(true)
-      throttle.recordFailure()
-    },
-    [value, course.pin, throttle, onUnlock],
-  )
-
-  return (
-    <Centered>
-      <h1 className="text-xl font-bold text-text">{course.name}</h1>
-      <p className="text-sm text-muted">선생님이 알려준 핀번호를 입력해 주세요.</p>
-
-      <form onSubmit={submit} className="mt-2 flex flex-col items-center gap-3">
-        <input
-          value={value}
-          onChange={(event) => {
-            setValue(event.target.value)
-            setWrong(false)
-          }}
-          disabled={throttle.isLocked}
-          autoFocus
-          // 숫자 핀이 많아 모바일에서 숫자 키패드가 뜨는 편이 빠르다. 문자를
-          // 섞은 핀도 쓸 수 있어야 하므로 type="number" 는 쓰지 않는다.
-          inputMode="numeric"
-          autoComplete="off"
-          placeholder="핀번호"
-          className="w-40 rounded-lg border border-line bg-surface px-3 py-2.5 text-center text-lg tracking-widest outline-none focus:border-secondary disabled:opacity-50"
-        />
-
-        <button
-          type="submit"
-          disabled={throttle.isLocked || throttle.isBusy}
-          className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          들어가기
-        </button>
-      </form>
-
-      {throttle.isLocked ? (
-        <p className="text-sm text-error">
-          너무 여러 번 틀렸습니다. {throttle.remainingSeconds}초 뒤에 다시 시도해 주세요.
-        </p>
-      ) : (
-        wrong && <p className="text-sm text-error">핀번호가 맞지 않습니다.</p>
-      )}
-
-      <Link to="/materials" className="text-sm text-muted underline hover:text-text">
-        과목 목록으로
-      </Link>
-    </Centered>
   )
 }
 
@@ -240,13 +180,5 @@ function CourseTab({
     >
       {children}
     </NavLink>
-  )
-}
-
-function Centered({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mx-auto flex max-w-lg flex-col items-center gap-3 rounded-2xl border border-line bg-surface px-6 py-14 text-center">
-      {children}
-    </div>
   )
 }

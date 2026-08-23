@@ -24,8 +24,8 @@ export default function ActivityList() {
     // 미리보기로 보여줘야 해서, 걸러내지 않고 전부 받아온 뒤 이 화면에서
     // 항목별로 잠글지 정한다.
     Promise.all([
-      listActivities({ courseId: scope.courseId, seasonId: seasonId || undefined }),
-      listSeasons(scope.courseId ? { courseId: scope.courseId } : undefined),
+      listActivities({ owner: scope.owner, seasonId: seasonId || undefined }),
+      listSeasons(scope.owner),
     ])
       .then(([loadedActivities, loadedSeasons]) => {
         if (cancelled) return
@@ -41,7 +41,8 @@ export default function ActivityList() {
     return () => {
       cancelled = true
     }
-  }, [scope.courseId, seasonId, isTeacher])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope.owner.courseId, scope.owner.clubId, seasonId, isTeacher])
 
   const seasonTitle = (id: string) => seasons.find((season) => season.id === id)?.title ?? ''
 

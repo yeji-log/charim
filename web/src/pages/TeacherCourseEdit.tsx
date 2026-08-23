@@ -167,7 +167,7 @@ function CourseEditPage() {
         />
       </div>
       <div hidden={tab !== 'board'}>
-        <BoardEditor courseId={courseId} />
+        <BoardEditor owner={{ courseId }} />
       </div>
       <div hidden={tab !== 'materials'}>
         {user && <MaterialManager uid={user.uid} courseId={courseId} disabled={!isOwner} />}

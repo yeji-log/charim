@@ -29,8 +29,8 @@ export default function Roadmap() {
     let cancelled = false
 
     Promise.all([
-      listSeasons(scope.courseId ? { courseId: scope.courseId } : undefined),
-      listActivities({ courseId: scope.courseId, publishedOnly: !isTeacher }),
+      listSeasons(scope.owner),
+      listActivities({ owner: scope.owner, publishedOnly: !isTeacher }),
     ])
       .then(([loadedSeasons, loadedActivities]) => {
         if (cancelled) return
@@ -50,7 +50,10 @@ export default function Roadmap() {
     return () => {
       cancelled = true
     }
-  }, [scope.courseId, isTeacher])
+    // owner 는 렌더마다 새 객체라 그대로 넣으면 무한히 다시 돈다. 실제로
+    // 바뀌는 값만 의존성에 둔다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scope.owner.courseId, scope.owner.clubId, isTeacher])
 
   if (!seasons) return <p className="text-muted">불러오는 중…</p>
 

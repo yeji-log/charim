@@ -29,11 +29,14 @@ web/src/lib/timetable.ts   시간표 — timetables/{uid}
 web/src/lib/classRecords.ts  반 명단(공용) + 참여 기록(교사별)
 web/src/lib/chunkedFile.ts   파일을 base64 조각으로 Firestore 에 저장 ★
 web/src/lib/courses.ts       과목 (핀·공개 여부)
+web/src/lib/clubs.ts         동아리 — 문서 id = 담당 교사 uid ★
 web/src/lib/materials.ts     수업자료 — 파일은 chunkedFile 에 맡긴다
 web/src/lib/pinThrottle.ts   핀 오입력 감속
 web/src/lib/pinUnlock.ts     핀 통과 기억(sessionStorage) — 새로고침에 다시 안 묻는다
 web/src/components/TeacherPinBadge.tsx  학생 화면에서 담당 교사에게만 보이는 핀 배지
-web/src/pages/CourseGate.tsx 핀 게이트 (부모 라우트가 <Outlet/> 을 연다)
+web/src/pages/CourseGate.tsx 과목 게이트 (부모 라우트가 <Outlet/> 을 연다)
+web/src/pages/Club.tsx       동아리 목록 + 게이트 + 홈 (과목과 같은 구조)
+web/src/components/PinGate.tsx  핀 입력 화면 — 과목·동아리 게이트가 함께 쓴다
 web/src/pages/TeacherPublicPage.tsx  /t/{슬러그}
 web/src/lib/lessons.ts       시즌 + 활동 (courseId 유무로 과목/동아리)
 web/src/lib/lessonScope.ts   화면 하나를 두 맥락에 마운트하는 스코프 훅 ★
@@ -264,16 +267,41 @@ CHICODE는 교사 1명 전용이라 이 구분이 없었다. **차림의 설계�
 workspaces/{wsId}                    ← 학교 하나 (당분간 1개만 존재)
   members/{uid}                      ← 교사 + 역할
   settings/site                      ← 학교 이름·색·쓸 기능 토글
-  settings/club                      ← 동아리 홈 설정 + 핀
   teacherPages/{slug}                ← 교사 공개 주소 /t/{slug} ★
   courses/{courseId}                 ← 과목 (담당 교사, 핀)
+  clubs/{uid}                        ← 동아리 — 문서 id 가 곧 담당 교사 uid ★
   materials/{id}                     ← 자료 (courseId 필드로 과목에 연결)
-  seasons/{id}                       ← 시즌/수업목차 (courseId 없으면 동아리)
-  activities/{id}                    ← 활동/수업내용 (courseId 없으면 동아리)
+  seasons/{id}                       ← 시즌/수업목차 (courseId | clubId 로 소속)
+  activities/{id}                    ← 활동/수업내용 (courseId | clubId 로 소속)
   classes/{classId}/students/{id}    ← 반 명단 (담당 교사끼리 공유)
                    /dates/{id}       ← 날짜별 참여 기록
   timetables/{uid}                   ← 시간표는 교사마다 다르다 ★
 ```
+
+### 동아리는 교사 한 명당 하나다 (2026-08-23 결정)
+
+원래 동아리는 `settings/club` 문서 **하나**였다. 학교에 동아리 하나, 등록된
+교사면 누구나 고치는 공용 공간. 사용자가 **교사마다 자기 동아리를 하나씩**
+갖는 쪽으로 바꿨고, 그래서 지금은 과목과 완전히 같은 모양이다 — 목록에서
+고르고, 핀 게이트를 지나, 시즌·활동을 본다.
+
+**문서 id 를 담당 교사의 uid 로 둔 것이 핵심이다.** 규칙에서
+`clubId == request.auth.uid` 한 줄이면 "남의 동아리를 만들 수 없다"와 "자기
+동아리를 둘 만들 수 없다"가 동시에 지켜지고, 문서를 더 읽지 않아 비용도 없다.
+`teacherPages` 가 슬러그를 문서 id 로 삼아 중복을 막는 것과 같은 수법이다.
+
+**`settings/club` 은 이제 아무 코드도 읽지 않는다.** 콘솔에서 지워도 된다.
+CLAUDE.md 가 경고하던 "고정 id 싱글턴"이 실제로 문제가 된 첫 사례다.
+
+`seasons`/`activities` 의 소속 규칙도 함께 바뀌었다. 예전에는 "`courseId` 가
+**없으면** 동아리"였는데, 동아리가 여럿이 되면서 그걸로는 어느 동아리인지 알 수
+없다. 이제 `courseId` 또는 `clubId` 중 **하나가 반드시 있다**. `lib/lessons.ts`
+의 `LessonOwner` 유니온 타입이 호출부에서 스코프를 빼먹지 못하게 강제한다.
+
+그 시절 만든 문서(둘 다 없는 것)는 어느 화면에도 안 뜬다. 자동으로 아무
+동아리에 밀어 넣으면 먼저 화면을 연 교사가 남의 자료를 가져가므로, 교사
+페이지의 동아리 구역에 **"내 동아리로 가져오기" 버튼**을 두고 직접 누르게 했다
+(`listLegacyLessons` / `adoptLegacyLessons`). 남은 게 없으면 그 자리가 사라진다.
 
 **필드 단위 상세와 이식 절차는 [`핵심기능_명세.md`](핵심기능_명세.md)에 있다.**
 `seasons`/`activities`를 과목 밑에 중첩하지 않고 평평하게 두는 이유도 거기 적었다
@@ -346,6 +374,19 @@ CHICODE는 교사가 자기 반 명단을 직접 입력했다. 학교 단위면 
 `isOwner()` 는 멤버 문서를 `get()` 해서 `role == 'owner'` 를 보면 되고, 같은
 요청 안에서 같은 문서 접근은 캐시되므로 `isMember()` 의 `exists()` 위에 읽기
 비용이 더 붙지 않는다.
+
+### 시즌·활동 쓰기는 아직 안 조였다
+
+과목·동아리 **문서 자체**는 담당 교사만 고칠 수 있다(`ownerUid`, 문서 id=uid).
+그런데 그 안의 `seasons`/`activities` 쓰기는 여전히 `isMember()` 다 — 초대제로
+들어온 교사면 남의 수업 내용도 고칠 수 있다는 뜻이다. 화면에는 남의 것으로 가는
+길이 없어서(목록에서 자기 것만 보인다) 실수로 닿지는 않지만, 규칙이 막아주는
+것은 아니다.
+
+일부러 남겨뒀다. 과목 쪽을 조이려면 `courses` 문서를 `get()` 해야 해서 쓰기마다
+읽기가 늘고, 동아리 쪽만 조이면 두 스코프의 규칙이 갈려 나중에 헷갈린다.
+**실제로 문제가 생기면 그때 둘을 함께 다룰 것** — 수업 중에 저장이 막히는
+사고가 더 비싸다.
 
 ### 반 명단 열람 범위 — 결정됨 (2026-08-22)
 

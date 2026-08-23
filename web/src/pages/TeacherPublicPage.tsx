@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { CourseGrid } from './Materials'
+import { getClub, type ClubMeta } from '../lib/clubs'
 import { listCoursesByTeacher, type CourseMeta } from '../lib/courses'
 import { getTeacherPageBySlug, type TeacherPage } from '../lib/teacherPages'
 
@@ -18,6 +19,7 @@ export default function TeacherPublicPage() {
   const { slug } = useParams<{ slug: string }>()
   const [page, setPage] = useState<TeacherPage | null>(null)
   const [courses, setCourses] = useState<CourseMeta[]>([])
+  const [club, setClub] = useState<ClubMeta | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'missing'>('loading')
 
   useEffect(() => {
@@ -33,8 +35,16 @@ export default function TeacherPublicPage() {
           return
         }
         setPage(found)
-        setCourses(await listCoursesByTeacher(found.uid))
-        if (!cancelled) setStatus('ready')
+        // 동아리는 문서 id 가 곧 교사 uid 라 질의 없이 하나 읽으면 된다.
+        const [foundCourses, foundClub] = await Promise.all([
+          listCoursesByTeacher(found.uid),
+          getClub(found.uid),
+        ])
+        if (cancelled) return
+        setCourses(foundCourses)
+        // 준비 중인 동아리는 이 주소에서 감춘다 — 학생에게 주는 주소다.
+        setClub(foundClub?.published ? foundClub : null)
+        setStatus('ready')
       })
       .catch((caught) => {
         if (cancelled) return
@@ -71,6 +81,21 @@ export default function TeacherPublicPage() {
       <p className="text-sm text-muted">수업을 고르면 자료와 수업 내용을 볼 수 있습니다.</p>
 
       <CourseGrid courses={courses} emptyText="아직 열린 수업이 없습니다." />
+
+      {club && (
+        <section className="mt-6">
+          <h2 className="text-lg font-bold text-text">동아리</h2>
+          <Link
+            to={`/club/${club.id}`}
+            className="mt-3 block rounded-2xl border border-line bg-surface p-6 transition-colors hover:border-secondary sm:max-w-sm"
+          >
+            <h3 className="text-lg font-bold text-text">{club.name}</h3>
+            <p className="mt-1.5 text-sm text-muted">
+              {club.pinRequired ? '핀번호가 필요합니다' : '바로 열람할 수 있습니다'}
+            </p>
+          </Link>
+        </section>
+      )}
     </div>
   )
 }
