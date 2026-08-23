@@ -18,6 +18,7 @@ import Club, { ClubHome } from './pages/Club'
 import Schedule from './pages/Schedule'
 import Teacher from './pages/Teacher'
 import TeacherCourseEdit from './pages/TeacherCourseEdit'
+import { PrivacyPage, TermsPage } from './pages/Policy'
 import NotFound from './pages/NotFound'
 
 // pdf.js 가 나중에 동적으로 로드되기 전에 미리 채워야 한다 — 안 채우면
@@ -57,6 +58,11 @@ createRoot(document.getElementById('root')!).render(
             </Route>
 
             <Route path="schedule" element={<Schedule />} />
+
+            {/* 정책 문서는 모달이 아니라 주소를 가진 화면이다 — 학생·보호자에게
+                링크 한 줄로 보낼 수 있어야 한다(Policy.tsx 참고). */}
+            <Route path="privacy" element={<PrivacyPage />} />
+            <Route path="terms" element={<TermsPage />} />
             <Route path="teacher" element={<Teacher />} />
             {/* 과목 편집은 모달이 아니라 주소를 가진 화면이다 — 모바일에서
                 뒤로 가기로 나갈 수 있고, 모달이 겹치지 않는다. */}

@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 
 import { useAuth } from './auth/AuthProvider'
 import Logo from './components/Logo'
@@ -74,7 +74,12 @@ export default function App() {
       <footer className="border-t border-line px-5 py-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
           <p>© 차림 CHARIM</p>
-          {/* 개인정보처리방침·이용약관은 실제 동작을 확인한 뒤 마지막 단계에서 쓴다. */}
+          <Link to="/privacy" className="font-semibold underline-offset-2 hover:text-text hover:underline">
+            개인정보처리방침
+          </Link>
+          <Link to="/terms" className="underline-offset-2 hover:text-text hover:underline">
+            이용약관
+          </Link>
         </div>
       </footer>
     </div>
