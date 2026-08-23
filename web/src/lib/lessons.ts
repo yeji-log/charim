@@ -52,9 +52,29 @@ export interface Section {
   title: string
   content: string
   isCode: boolean
-  kind?: 'checklist'
+  kind?: 'checklist' | 'slides'
   /** kind === 'checklist' 일 때만 쓴다. */
   items?: ChecklistItem[]
+}
+
+/**
+ * 발표자료 자리를 표시하는 특수 항목.
+ *
+ * 내용은 여기 content 가 아니라 slides.ts 에 파일로 저장되지만, **"몇 번째
+ * 순서에 보일지"는 다른 항목과 똑같이 배열 위치로 정한다** — 그래야 교사가
+ * 발표자료 위치도 화살표로 옮길 수 있다.
+ *
+ * 수업 하나에 정확히 하나만 있고 교사가 지울 수 없다. 없으면 normalizeActivity
+ * 가 맨 끝에 자동으로 채운다.
+ */
+const SLIDES_SECTION_ID = 'slides'
+
+export function isSlidesSection(section: Section): boolean {
+  return section.kind === 'slides'
+}
+
+export function makeSlidesSection(): Section {
+  return { id: SLIDES_SECTION_ID, title: '발표자료', content: '', isCode: false, kind: 'slides' }
 }
 
 export interface ChecklistItem {
@@ -116,10 +136,14 @@ const activitiesRef = () => collection(db, ...wsPath('activities'))
 const activityRef = (id: string) => doc(db, ...wsPath('activities', id))
 
 function normalizeActivity(id: string, data: Record<string, unknown>): Activity {
+  const sections = Array.isArray(data.sections) ? (data.sections as Section[]) : []
+  // 발표자료 자리가 없는 수업(이 기능 이전에 만든 것)은 맨 끝에 채워 넣는다.
+  const withSlides = sections.some(isSlidesSection) ? sections : [...sections, makeSlidesSection()]
+
   return {
     ...(data as Omit<Activity, 'id' | 'sections'>),
     id,
-    sections: Array.isArray(data.sections) ? (data.sections as Section[]) : [],
+    sections: withSlides,
   }
 }
 

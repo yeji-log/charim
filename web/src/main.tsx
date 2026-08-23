@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 
 import './index.css'
 import App from './App'
+import { installMapUpsertPolyfill } from './lib/mapUpsertPolyfill'
 import { AuthProvider } from './auth/AuthProvider'
 import Home from './pages/Home'
 import Materials from './pages/Materials'
@@ -18,6 +19,10 @@ import Schedule from './pages/Schedule'
 import Teacher from './pages/Teacher'
 import TeacherCourseEdit from './pages/TeacherCourseEdit'
 import NotFound from './pages/NotFound'
+
+// pdf.js 가 나중에 동적으로 로드되기 전에 미리 채워야 한다 — 안 채우면
+// 구형 브라우저(갤럭시 탭 등)에서 발표 화면이 통째로 빈 화면이 된다.
+installMapUpsertPolyfill()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

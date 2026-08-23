@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
+import SlideSection from '../components/SlideSection'
+import TeacherPresenter from '../components/TeacherPresenter'
 import { useLessonScope } from '../lib/lessonScope'
 import { getActivity, type Activity, type Section } from '../lib/lessons'
 
@@ -79,24 +81,30 @@ export default function ActivityDetail() {
         )}
       </header>
 
+      {isTeacher && <TeacherPresenter activityId={activity.id} />}
+
       {activity.sections.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-line p-10 text-center text-sm text-muted">
           아직 내용이 없습니다.
         </p>
       ) : (
-        activity.sections.map((section) => <SectionView key={section.id} section={section} />)
+        activity.sections.map((section) => (
+          <SectionView key={section.id} section={section} activityId={activity.id} />
+        ))
       )}
     </article>
   )
 }
 
-function SectionView({ section }: { section: Section }) {
+function SectionView({ section, activityId }: { section: Section; activityId: string }) {
   return (
     <section className="rounded-2xl border border-line bg-surface p-6">
       {section.title && <h2 className="text-lg font-bold text-text">{section.title}</h2>}
 
       <div className="mt-3">
-        {section.kind === 'checklist' ? (
+        {section.kind === 'slides' ? (
+          <SlideSection activityId={activityId} />
+        ) : section.kind === 'checklist' ? (
           <ChecklistView items={section.items ?? []} />
         ) : section.isCode ? (
           <CodeBlock content={section.content} />

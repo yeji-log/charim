@@ -5,6 +5,8 @@ node_modules
 dist
 # tsc -b 가 남기는 증분 빌드 캐시
 *.tsbuildinfo
+# postinstall 이 node_modules 에서 복사하는 pdf.js 자산 (약 15MB)
+web/public/pdfjs
 .DS_Store
 *.log
 .vercel

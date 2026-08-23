@@ -7,10 +7,15 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync:pdfjs-assets": "node scripts/sync-pdfjs-assets.mjs",
+    "postinstall": "node scripts/sync-pdfjs-assets.mjs"
   },
   "dependencies": {
     "firebase": "^12.17.1",
+    "jszip": "^3.10.1",
+    "pdfjs-dist": "^6.2.108",
+    "pptx-preview": "^1.0.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"

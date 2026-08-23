@@ -14,7 +14,7 @@
 
 ## 0. 지금까지 온 곳 / 다음 할 일
 
-**1~6단계 완료**(골격 / 로그인·멤버 / 시간표 / 반 명단·수업기록 / 과목·수업자료·핀 게이트 / 수업내용 보드·동아리). 앱은 `web/` 아래에 있다.
+**1~7단계 완료**(골격 / 로그인·멤버 / 시간표 / 반 명단·수업기록 / 과목·수업자료·핀 게이트 / 수업내용 보드·동아리 / 발표 모드). 앱은 `web/` 아래에 있다.
 
 ```
 web/src/index.css          Pretendard @font-face + @theme 색 토큰
@@ -37,6 +37,12 @@ web/src/lib/lessons.ts       시즌 + 활동 (courseId 유무로 과목/동아�
 web/src/lib/lessonScope.ts   화면 하나를 두 맥락에 마운트하는 스코프 훅 ★
 web/src/pages/BoardEditor.tsx  교사용 보드 (시즌·활동·항목 편집)
 web/src/pages/TeacherCourseEdit.tsx  과목 편집 — /teacher/course/{id}
+web/src/lib/slides.ts        발표자료(PPT/PDF) + 대본
+web/src/lib/presentation.ts  발표 실시간 상태 (onSnapshot)
+web/src/lib/mapUpsertPolyfill.ts  ★ 지우면 갤럭시탭 발표 화면이 빈 화면이 된다
+web/src/components/PdfViewer.tsx     pdf.js 직접 렌더
+web/src/components/SlideViewer.tsx   pptx 시도 → 실패 시 PDF
+web/src/components/TeacherPresenter.tsx  교사 발표 제어 + 대본
 web/src/pages/ClassRecords.tsx  수업기록 화면
 web/src/pages/Schedule.tsx 일정 (시간표 + 기록 탭)
 web/src/pages/Teacher.tsx  로그인 / 미등록(uid 표시) / 대시보드
@@ -45,16 +51,15 @@ web/public/fonts/          woff2 서브셋 4종 + OFL 원문
 firestore.rules            권한 규칙 (루트 — 앱 코드가 아니다)
 ```
 
-**다음은 7단계(발표 모드)** — 명세 7절 순서 그대로. `labSlides.ts` +
-`PptxSlideViewer` / `PdfViewer` 이식이고, `presentations/{activityId}` 문서에
-현재 슬라이드 번호를 두고 `onSnapshot` 으로 학생 화면이 따라온다.
+**다음은 8단계(홈)** — 명세 7절 순서 그대로. 다른 화면이 다 있어야 홈에 뭘
+모을지 정해진다. 로그인 상태로 갈라 교사용(오늘의 수업·미작성 기록·오늘의
+시간표)과 학생용(오늘의 수업·자료 보기) 두 벌을 그린다. 그다음이 9단계
+정책 문서다.
 
-**6단계에서 미룬 것들이 여기 함께 온다** — 활동 항목의 `kind: 'slides'`(발표자료
-자리), 항목 첨부파일, 유튜브 링크. 지금 `Section` 타입에는 글·코드·체크리스트만
-있다.
+**아직 안 만든 것** — 항목 첨부파일과 유튜브 링크(CHICODE 에는 있다). 발표
+모드를 넣으면서 함께 가져오려다 범위가 커져 미뤘다. 필요해지면 그때.
 
-정렬은 `@dnd-kit` 없이 화살표 버튼으로 통일했다(사용자 결정). 아이패드에서
-드래그와 스크롤이 충돌하지 않고 번들이 가볍다.
+정렬은 `@dnd-kit` 없이 화살표 버튼으로 통일했다(사용자 결정).
 
 Firebase 쪽은 이미 살아 있다 — 프로젝트 `charim-b2c13`, 규칙 배포됨(CLI),
 소유자 멤버 문서 등록됨, 교사 페이지 슬러그와 시간표 저장까지 실제로 확인했다.
@@ -439,7 +444,7 @@ CHICODE의 `src/content/PrivacyPolicy.tsx`는 **"담당 교사가 자기 학생�
 4. ~~**반 명단 + 수업기록**~~ — 완료. 명단은 담당 교사 공용, 기록은 교사별
 5. ~~**과목 + 수업자료 + 핀 게이트**~~ — 완료. `/t/{슬러그}` 도 함께
 6. ~~**수업내용 보드**~~ — 완료. 동아리도 같은 화면을 스코프만 바꿔 쓴다
-7. **발표 모드**
+7. ~~**발표 모드**~~ — 완료. PPT+PDF, 대본 자동 추출, 실시간 동기화
 8. **정책 문서** — 실제 동작을 확인한 뒤 작성
 
 1~3번까지만 해도 쓸 만한 게 나온다.

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 
 import { useAuth } from '../auth/AuthProvider'
 import Modal from '../components/Modal'
+import SlideUploader from '../components/SlideUploader'
 import ToggleSwitch from '../components/ToggleSwitch'
 import {
   addActivity,
@@ -470,6 +471,7 @@ function ActivityEditor({
               section={section}
               index={index}
               total={draft.sections.length}
+              activityId={activity.id}
               onChange={(patch) => patchSection(index, patch)}
               onMove={(delta) => moveSection(index, delta)}
               onRemove={() =>
@@ -497,6 +499,7 @@ function SectionEditor({
   section,
   index,
   total,
+  activityId,
   onChange,
   onMove,
   onRemove,
@@ -504,6 +507,7 @@ function SectionEditor({
   section: Section
   index: number
   total: number
+  activityId: string
   onChange: (patch: Partial<Section>) => void
   onMove: (delta: number) => void
   onRemove: () => void
@@ -541,17 +545,23 @@ function SectionEditor({
           >
             ▼
           </button>
-          <button
-            onClick={onRemove}
-            aria-label="항목 지우기"
-            className="rounded-md border border-line px-2 py-1 text-xs text-muted hover:border-error hover:text-error"
-          >
-            ✕
-          </button>
+          {/* 발표자료 자리는 지울 수 없다 — 지워도 normalizeActivity 가 맨
+              끝에 다시 채워 넣어서, 지우는 것처럼 보이다가 위치만 잃는다. */}
+          {section.kind !== 'slides' && (
+            <button
+              onClick={onRemove}
+              aria-label="항목 지우기"
+              className="rounded-md border border-line px-2 py-1 text-xs text-muted hover:border-error hover:text-error"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 
-      {section.kind === 'checklist' ? (
+      {section.kind === 'slides' ? (
+        <SlideUploader activityId={activityId} />
+      ) : section.kind === 'checklist' ? (
         <div className="mt-2 flex flex-col gap-1.5">
           {items.map((item, itemIndex) => (
             <div key={item.id} className="flex items-center gap-2">
