@@ -124,12 +124,65 @@ function TeacherDashboard() {
         </div>
       </header>
 
-      <TeacherPageSettings />
-
-      <TeacherCourses />
-
-      <ClubBoard />
+      <DashboardTabs />
     </div>
+  )
+}
+
+/**
+ * 교사 페이지는 성격이 다른 세 덩어리로 나뉜다. 한 화면에 쌓아두면 과목 하나
+ * 고치러 들어와도 아래 동아리까지 지나가야 해서 스크롤이 길어진다. 일정 화면의
+ * 시간표/기록 탭과 같은 방식으로 나눈다.
+ *
+ * 탭 상태를 주소에 남기지 않고 컴포넌트 state 로만 둔다 — 교사 페이지는
+ * 학생에게 링크로 건네는 화면이 아니라 북마크할 이유가 없고, 라우트를 늘리면
+ * 뒤로 가기가 탭 전환마다 걸려 오히려 성가시다.
+ */
+const DASHBOARD_TABS = [
+  { key: 'address', label: '내 수업 주소' },
+  { key: 'courses', label: '과목' },
+  { key: 'club', label: '동아리' },
+] as const
+
+type DashboardTab = (typeof DASHBOARD_TABS)[number]['key']
+
+function DashboardTabs() {
+  const [tab, setTab] = useState<DashboardTab>('courses')
+
+  return (
+    <>
+      {/* 한글은 단어 사이 공백이 없어서 좁은 화면에서 글자 단위로 쌓인다.
+          min-w-0 + overflow-x-auto + whitespace-nowrap 으로 막는다. */}
+      <nav className="flex min-w-0 gap-1 overflow-x-auto border-b border-line pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {DASHBOARD_TABS.map((entry) => (
+          <button
+            key={entry.key}
+            onClick={() => setTab(entry.key)}
+            className={[
+              'shrink-0 whitespace-nowrap rounded-lg px-4 py-2 text-sm font-bold transition-colors',
+              tab === entry.key
+                ? 'bg-primary-tint text-primary-dark'
+                : 'text-muted hover:bg-primary-tint/60 hover:text-text',
+            ].join(' ')}
+          >
+            {entry.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* 탭을 오갈 때마다 다시 불러오지 않도록 감추기만 한다 — 과목 목록과
+          동아리 보드는 각자 Firestore 를 읽으므로, 언마운트하면 탭을 누를
+          때마다 읽기가 발생한다(무료 한도가 하루 5만 읽기다). */}
+      <div hidden={tab !== 'address'}>
+        <TeacherPageSettings />
+      </div>
+      <div hidden={tab !== 'courses'}>
+        <TeacherCourses />
+      </div>
+      <div hidden={tab !== 'club'}>
+        <ClubBoard />
+      </div>
+    </>
   )
 }
 
