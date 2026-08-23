@@ -247,7 +247,13 @@ function TimetableBoard() {
       <header className="flex flex-wrap items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-primary-dark">시간표</h1>
-          <p className="text-sm text-muted">시간표는 선생님마다 각자 다릅니다.</p>
+          {/* 편집 안내를 설명 문장 옆에 붙인다. 아래에 따로 한 줄을 두면 그
+              줄이 켰다 껐다 할 때마다 표 전체가 위아래로 움직인다. 편집 중에는
+              빼는데, 이미 켜둔 스위치를 켜라고 할 이유가 없다. */}
+          <p className="text-sm text-muted">
+            시간표는 선생님마다 각자 다릅니다.
+            {!editMode && ' 고치려면 편집 스위치를 켜주세요.'}
+          </p>
         </div>
 
         <div className="ml-auto flex flex-wrap items-center gap-4">
@@ -278,12 +284,6 @@ function TimetableBoard() {
           </div>
         </div>
       </header>
-
-      {!editMode && (
-        <p className="text-sm text-muted">
-          보기 전용입니다. 고치려면 편집 스위치를 켜주세요.
-        </p>
-      )}
 
       <div className="overflow-x-auto rounded-2xl border border-line bg-surface">
         <table className="w-full min-w-[640px] border-collapse text-sm">
