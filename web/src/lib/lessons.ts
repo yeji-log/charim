@@ -237,9 +237,24 @@ export async function addActivity(input: ActivityInput): Promise<Activity> {
   const id = crypto.randomUUID()
   const now = Date.now()
   const { courseId, ...rest } = input
-  const activity = { ...rest, ...(courseId ? { courseId } : {}), createdAt: now, updatedAt: now }
+
+  // **만들 때도 발표자료 자리를 채운다.** 예전엔 normalizeActivity(읽을 때)만
+  // 채웠는데, 그러면 방금 만든 수업을 바로 편집창에서 열었을 때 발표자료 항목이
+  // 없다 — 화면을 새로고침해야 나타나서 "발표자료를 올릴 곳이 없다"로 보인다.
+  // 읽기 쪽 보정은 그대로 두되(옛 문서 대비) 여기서도 보장한다.
+  const sections = rest.sections.some(isSlidesSection)
+    ? rest.sections
+    : [...rest.sections, makeSlidesSection()]
+
+  const activity = {
+    ...rest,
+    sections,
+    ...(courseId ? { courseId } : {}),
+    createdAt: now,
+    updatedAt: now,
+  }
   await setDoc(activityRef(id), activity)
-  return { id, ...input, createdAt: now, updatedAt: now }
+  return { id, ...input, sections, createdAt: now, updatedAt: now }
 }
 
 export async function updateActivity(id: string, patch: Partial<ActivityInput>): Promise<void> {

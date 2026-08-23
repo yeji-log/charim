@@ -116,9 +116,13 @@ export default function SlideUploader({ activityId }: { activityId: string }) {
   return (
     <div className="mt-2 flex flex-col gap-3">
       <p className="text-xs leading-relaxed text-muted">
+        수업 시간에 <strong className="text-text">화면에 띄울</strong> 자료입니다. 학생이
+        내려받게 하려면 과목의 <strong className="text-text">자료</strong> 탭에 올려 주세요.
+      </p>
+      <p className="text-xs leading-relaxed text-muted">
         PPT 와 PDF 를 함께 올리는 것을 권합니다. PPT 에서는 발표자 노트를 대본으로 가져오고,
-        PDF 는 PPT 미리보기가 깨졌을 때 대신 보여줍니다. 학생은 파일을 내려받을 수 없습니다.
-        최대 {formatSize(MAX_SLIDE_FILE_SIZE)}.
+        PDF 는 PPT 미리보기가 깨졌을 때 대신 보여줍니다. 최대{' '}
+        {formatSize(MAX_SLIDE_FILE_SIZE)}.
       </p>
 
       <SlideRow
