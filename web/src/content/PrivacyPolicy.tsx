@@ -18,8 +18,6 @@ export const PRIVACY_POLICY_EFFECTIVE_DATE = '2026. 8. 23.'
  * - Firestore 리전: `firebase firestore:databases:get "(default)"` 로 실측 —
  *   asia-northeast3(서울). 추측하지 말고 이 명령으로 다시 확인할 것.
  * - 분석 도구·외부 임베드 없음: analytics / gtag / iframe grep 0건
- * - 제11조 기관 연락처: kopico.go.kr 과 privacy.kisa.or.kr 을 직접 열어 확인했다
- *   (1833-6972 / 118). 바뀔 수 있으니 손볼 때 다시 볼 것.
  * - members/{uid} 필드: email, name, role (2026-08-23 Firebase 콘솔에서 확인).
  *   규칙이 본인 문서만 열어주고 firebase-tools 에는 문서를 읽는 명령이 없어서
  *   코드로는 확인할 수 없다 — 필드를 바꾸면 제1조도 함께 고칠 것.
@@ -339,43 +337,7 @@ export default function PrivacyPolicy() {
         </p>
       </PolicyArticle>
 
-      <PolicyArticle num="제11조" title="권익침해 구제방법">
-        <p>
-          개인정보 침해로 인한 상담이나 피해 구제가 필요하시면 아래 기관에 문의하실 수
-          있습니다. 차림과 별개의 기관입니다.
-        </p>
-        <ul>
-          <li>
-            개인정보분쟁조정위원회 — 1833-6972 (
-            <a
-              href="https://kopico.go.kr"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="text-primary underline"
-            >
-              kopico.go.kr
-            </a>
-            )
-          </li>
-          <li>
-            개인정보침해 신고센터 — 118 (
-            <a
-              href="https://privacy.kisa.or.kr"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="text-primary underline"
-            >
-              privacy.kisa.or.kr
-            </a>
-            )
-          </li>
-        </ul>
-        <p>
-          그 밖에 수사가 필요한 사안은 경찰 등 수사기관에 신고하실 수 있습니다.
-        </p>
-      </PolicyArticle>
-
-      <PolicyArticle num="제12조" title="방침의 변경">
+      <PolicyArticle num="제11조" title="방침의 변경">
         <p>
           이 방침은 법령, 정책 또는 서비스 내용의 변경에 따라 수정될 수 있으며, 변경 시 이
           페이지를 통해 공지합니다.
