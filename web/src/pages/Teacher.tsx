@@ -233,6 +233,16 @@ function WithdrawSection() {
               담당 교사가 여럿인 반은 <strong className="font-semibold">나만 빠지고</strong>{' '}
               명단은 남습니다. 내가 마지막 담당인 반은 학생 명단까지 함께 지워집니다.
             </p>
+            {/* 시즌·활동은 등록된 교사면 누구나 고칠 수 있는데(firestore.rules),
+                소유는 courseId / clubId 로 묶여 있다. 그래서 동료가 내 동아리에
+                써둔 활동도 내가 탈퇴하면 같이 사라진다 — 목록의 "내 동아리와
+                그 안의 시즌·활동"만 읽고는 이걸 알 수 없다. */}
+            <p className="mt-2">
+              <strong className="font-semibold">
+                동료 선생님이 내 과목·동아리에 써둔 내용도 함께 지워집니다.
+              </strong>{' '}
+              함께 꾸린 것이 있다면 먼저 알려 주세요.
+            </p>
             <p className="mt-2 font-semibold text-error">
               내가 학교의 마지막 교사라면 아무도 들어올 수 없게 됩니다. 동료 선생님이 남아
               있는지 먼저 확인해 주세요.
