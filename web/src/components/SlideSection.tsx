@@ -105,20 +105,26 @@ export default function SlideSection({ activityId }: { activityId: string }) {
               발표 중 · {presentation?.currentSlide} 쪽
             </span>
           )}
-          <button
-            onClick={() => setPresenterOpen(true)}
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
-          >
-            {active ? '발표 제어하기' : '발표 화면 열기'}
-          </button>
-          {active && (
+
+          {/* 버튼은 오른쪽 끝으로 민다. 상태 배지는 왼쪽에 남는다 — 좁은
+              화면에서 줄이 바뀌면 ml-auto 가 무의미해지므로 감싸는 div 에
+              건다(각 버튼에 걸면 줄바꿈 시 서로 떨어진다). */}
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {active && (
+              <button
+                onClick={() => void stopPresentation(activityId)}
+                className="rounded-lg border border-error px-3 py-2 text-sm font-semibold text-error transition-colors hover:bg-error hover:text-white"
+              >
+                발표 끝내기
+              </button>
+            )}
             <button
-              onClick={() => void stopPresentation(activityId)}
-              className="rounded-lg border border-error px-3 py-2 text-sm font-semibold text-error transition-colors hover:bg-error hover:text-white"
+              onClick={() => setPresenterOpen(true)}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
             >
-              발표 끝내기
+              {active ? '발표 제어하기' : '발표 화면 열기'}
             </button>
-          )}
+          </div>
         </div>
       )}
 
