@@ -338,8 +338,15 @@ function MaterialManager({
       })
   }, [courseId])
 
-  const upload = useCallback(async () => {
-    const file = fileRef.current?.files?.[0]
+  /**
+   * 파일을 고르면 바로 올린다.
+   *
+   * 예전엔 "올리기" 버튼을 따로 눌러야 했는데, 화면에 저장 버튼이 여럿이라
+   * 파일을 고르고 다른 저장을 눌러 올라간 줄 아는 사고가 실제로 났다
+   * (SlideUploader.tsx 에도 같은 문제가 있었다). 버튼을 없애 헷갈릴 여지를
+   * 지운다.
+   */
+  const upload = useCallback(async (file: File | undefined) => {
     if (!file) return
 
     setBusy(true)
@@ -348,7 +355,6 @@ function MaterialManager({
       const added = await addMaterial(file, { title, ownerUid: uid, courseId })
       setMaterials((prev) => [added, ...(prev ?? [])])
       setTitle('')
-      if (fileRef.current) fileRef.current.value = ''
     } catch (caught) {
       // 형식·크기 문제는 사용자가 고칠 수 있으니 이유를 그대로 보여준다.
       if (caught instanceof MaterialValidationError) setError(caught.message)
@@ -358,6 +364,8 @@ function MaterialManager({
       }
     } finally {
       setBusy(false)
+      // 같은 파일을 다시 고르면 change 가 안 뜨므로 값을 비운다.
+      if (fileRef.current) fileRef.current.value = ''
     }
   }, [title, uid, courseId])
 
@@ -382,13 +390,16 @@ function MaterialManager({
             placeholder="제목 (비우면 파일 이름을 씁니다)"
             className={field}
           />
-          <input ref={fileRef} type="file" className="text-sm text-muted" />
-          <div className="flex items-center gap-2">
-            <button onClick={upload} disabled={busy} className={primary}>
-              {busy ? '올리는 중…' : '올리기'}
-            </button>
-            <span className="text-xs text-muted">최대 {formatSize(MAX_FILE_SIZE)}</span>
-          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            disabled={busy}
+            onChange={(event) => upload(event.target.files?.[0])}
+            className="text-sm text-muted disabled:opacity-50"
+          />
+          <p className="text-xs text-muted">
+            {busy ? '올리는 중…' : `파일을 고르면 바로 올라갑니다. 최대 ${formatSize(MAX_FILE_SIZE)}`}
+          </p>
           {error && <p className="text-sm text-error">{error}</p>}
         </div>
       )}
