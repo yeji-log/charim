@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
+import TeacherPinBadge from '../components/TeacherPinBadge'
 import { getCourse, type CourseMeta } from '../lib/courses'
 import { usePinAttemptThrottle } from '../lib/pinThrottle'
+import { isPinUnlocked, markPinUnlocked } from '../lib/pinUnlock'
 
 /**
  * 과목 게이트.
@@ -13,8 +15,9 @@ import { usePinAttemptThrottle } from '../lib/pinThrottle'
  * 수 있는데, 부모가 <Outlet/> 을 열고 닫으면 그런 구멍이 없다. 자료 탭과
  * 수업내용 탭을 오가도 핀을 다시 묻지 않는 것도 덤이다.
  *
- * 통과 상태는 이 컴포넌트의 state 로만 들고 있다. 저장해두면 편하지만 공용
- * 컴퓨터에서 다음 학생이 그대로 들어가게 되므로 새로고침하면 다시 묻는다.
+ * 통과 상태는 sessionStorage 에 남긴다 — 새로고침이나 자료를 열었다 돌아오는
+ * 것만으로 핀을 다시 묻지 않게. 탭을 닫으면 사라지므로 공용 컴퓨터에서 다음
+ * 학생은 다시 입력해야 한다. 자세한 이유는 `lib/pinUnlock.ts`.
  */
 interface CourseContext {
   course: CourseMeta
@@ -26,7 +29,7 @@ export function useCourse(): CourseContext {
 
 export default function CourseGate() {
   const { courseId } = useParams<{ courseId: string }>()
-  const { state: authState } = useAuth()
+  const { state: authState, user } = useAuth()
   const [course, setCourse] = useState<CourseMeta | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'missing'>('loading')
   const [unlocked, setUnlocked] = useState(false)
@@ -42,6 +45,9 @@ export default function CourseGate() {
         if (cancelled) return
         setCourse(found)
         setStatus(found ? 'ready' : 'missing')
+        // 이 세션에서 이미 통과한 과목이면 다시 묻지 않는다. 과목을 불러온
+        // 뒤라야 지금 핀과 저장된 핀이 같은지 볼 수 있어서 여기서 정한다.
+        if (found) setUnlocked(isPinUnlocked(`course:${found.id}`, found.pin))
       })
       .catch((caught) => {
         if (cancelled) return
@@ -67,9 +73,13 @@ export default function CourseGate() {
     )
   }
 
-  // 담당 교사는 준비 중인 과목도 미리 본다 — 자료를 올려두고 정리하는 동안
-  // 학생 화면이 어떻게 보이는지 확인해야 한다.
-  const isOwner = authState === 'teacher'
+  // 담당 교사는 준비 중인 과목도 미리 보고 핀도 건너뛴다 — 자료를 올려두고
+  // 정리하는 동안 학생 화면이 어떻게 보이는지 확인해야 한다.
+  //
+  // **"로그인한 교사"가 아니라 "이 과목의 담당 교사"다.** 예전에는 로그인만
+  // 하면 누구든 통과했는데, 그러면 옆 반 선생님이 남의 과목을 준비 중인
+  // 상태까지 그대로 들여다본다. 다른 교사는 학생과 똑같이 다룬다.
+  const isOwner = authState === 'teacher' && !!user && course.ownerUid === user.uid
 
   if (!course.published && !isOwner) {
     return (
@@ -100,6 +110,12 @@ export default function CourseGate() {
           </p>
           <h1 className="text-2xl font-bold tracking-tight text-primary-dark">{course.name}</h1>
         </div>
+
+        {/* 교사에게만 보이는 핀 배지. 수업 중에 "핀번호 뭐예요?"가 나왔을 때
+            교사 화면까지 되돌아가지 않고 여기서 바로 읽어줄 수 있다. 학생에게는
+            보이지 않는다 — 담당 교사로 로그인해야만 isOwner 가 참이 된다. */}
+        {isOwner && <TeacherPinBadge pinRequired={course.pinRequired} pin={course.pin} />}
+
         {course.notionUrl && (
           <a
             href={course.notionUrl}
@@ -146,6 +162,7 @@ function PinGate({ course, onUnlock }: { course: CourseMeta; onUnlock: () => voi
 
       if (value.trim() === course.pin.trim()) {
         throttle.reset()
+        markPinUnlocked(`course:${course.id}`, course.pin)
         onUnlock()
         return
       }

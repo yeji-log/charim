@@ -2,14 +2,18 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
+import TeacherPinBadge from '../components/TeacherPinBadge'
 import { getClubSettings, listActivities, type Activity, type ClubSettings } from '../lib/lessons'
 import { usePinAttemptThrottle } from '../lib/pinThrottle'
+import { isPinUnlocked, markPinUnlocked } from '../lib/pinUnlock'
 
 /**
  * 동아리 게이트 + 레이아웃.
  *
  * 과목 게이트(CourseGate)와 같은 패턴이다 — 핀 검사를 부모 라우트에 두고
  * <Outlet/> 을 열어야 `/club/activities` 로 직접 들어와도 건너뛸 수 없다.
+ * 통과 사실을 sessionStorage 에 남겨 새로고침해도 다시 묻지 않는 것까지 같다
+ * (`lib/pinUnlock.ts`).
  */
 export default function Club() {
   const { state: authState } = useAuth()
@@ -20,7 +24,12 @@ export default function Club() {
 
   useEffect(() => {
     getClubSettings()
-      .then(setSettings)
+      .then((loaded) => {
+        setSettings(loaded)
+        // 이 세션에서 이미 통과했으면 다시 묻지 않는다. 저장된 값과 지금 핀이
+        // 같아야 통과로 치므로, 교사가 핀을 바꾸면 자연히 다시 묻는다.
+        setUnlocked(isPinUnlocked('club', loaded.pin))
+      })
       .catch((caught) => {
         console.error('동아리 설정 불러오기 실패', caught)
         setSettings(null)
@@ -41,8 +50,10 @@ export default function Club() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
+      <header className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight text-primary-dark">동아리</h1>
+        {/* 교사에게만 보이는 핀 배지 — CourseGate 와 같다. */}
+        {isTeacher && <TeacherPinBadge pinRequired={settings.pinRequired} pin={settings.pin} />}
       </header>
 
       <nav className="flex min-w-0 gap-1 overflow-x-auto border-b border-line pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -148,6 +159,7 @@ function ClubPinGate({ pin, onUnlock }: { pin: string; onUnlock: () => void }) {
 
       if (value.trim() === pin.trim()) {
         throttle.reset()
+        markPinUnlocked('club', pin)
         onUnlock()
         return
       }

@@ -31,6 +31,8 @@ web/src/lib/chunkedFile.ts   파일을 base64 조각으로 Firestore 에 저장 
 web/src/lib/courses.ts       과목 (핀·공개 여부)
 web/src/lib/materials.ts     수업자료 — 파일은 chunkedFile 에 맡긴다
 web/src/lib/pinThrottle.ts   핀 오입력 감속
+web/src/lib/pinUnlock.ts     핀 통과 기억(sessionStorage) — 새로고침에 다시 안 묻는다
+web/src/components/TeacherPinBadge.tsx  학생 화면에서 담당 교사에게만 보이는 핀 배지
 web/src/pages/CourseGate.tsx 핀 게이트 (부모 라우트가 <Outlet/> 을 연다)
 web/src/pages/TeacherPublicPage.tsx  /t/{슬러그}
 web/src/lib/lessons.ts       시즌 + 활동 (courseId 유무로 과목/동아리)

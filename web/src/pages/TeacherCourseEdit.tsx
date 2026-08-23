@@ -95,9 +95,35 @@ function CourseEditPage() {
     )
   }
 
-  // 남의 과목은 규칙이 쓰기를 막는다. 화면에서도 먼저 알려주는 편이 낫다 —
-  // 다 고치고 저장할 때 거부당하면 그때까지 쓴 게 날아간다.
+  // 남의 과목은 아예 열지 않는다.
+  //
+  // 전에는 "보기만 가능"이었다 — 규칙이 쓰기를 막으니 화면은 열어두고 저장만
+  // 못 하게 했다. 그런데 그러면 옆 반 선생님이 남의 수업자료와 수업내용을
+  // 그대로 훑어볼 수 있다. 자료는 각자 수업 준비의 결과물이라, 같은 학교라도
+  // 서로 열어보는 게 기본값이면 안 된다는 판단이다(사용자 결정).
+  //
+  // 다만 이건 화면에서 닫는 것이고 진짜 차단은 아니다. 학생이 로그인 없이
+  // 자료를 봐야 해서 Firestore 읽기 규칙이 열려 있고(courses.ts 의 "가벼운
+  // 잠금" 참고), 학생용 주소로 핀을 넣으면 누구든 들어간다. 서버가 막으려면
+  // Blaze + Cloud Functions 가 필요하다.
   const isOwner = course.ownerUid === user?.uid
+
+  if (!isOwner) {
+    return (
+      <div className="rounded-2xl border border-line bg-surface p-10 text-center">
+        <p className="font-bold text-text">다른 선생님의 과목입니다.</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          수업자료와 수업내용은 만든 선생님만 열 수 있습니다.
+        </p>
+        <Link
+          to="/teacher"
+          className="mt-4 inline-block text-sm font-semibold text-primary underline"
+        >
+          내 교사 페이지로
+        </Link>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -112,12 +138,6 @@ function CourseEditPage() {
           </Link>
         </div>
       </header>
-
-      {!isOwner && (
-        <p className="rounded-xl border border-warning/40 bg-warning/10 px-4 py-2.5 text-sm text-text">
-          다른 선생님의 과목입니다. 보기만 할 수 있고 저장은 되지 않습니다.
-        </p>
-      )}
 
       <nav className="flex min-w-0 gap-1 overflow-x-auto border-b border-line pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {TABS.map((entry) => (
