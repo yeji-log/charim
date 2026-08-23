@@ -15,15 +15,50 @@
  *
  * currentSlide 는 1부터 시작하고 PDF 쪽 번호와 그대로 맞아떨어진다.
  */
-import { doc, onSnapshot, setDoc, type Unsubscribe } from 'firebase/firestore'
+import {
+  arrayUnion,
+  deleteField,
+  doc,
+  onSnapshot,
+  setDoc,
+  updateDoc,
+  type Unsubscribe,
+} from 'firebase/firestore'
 
 import { db } from './firebase'
 import { wsPath } from './workspace'
+
+export interface InkPoint {
+  x: number
+  y: number
+}
+
+/**
+ * 펜을 누르고 뗄 때까지의 궤적 하나.
+ *
+ * 좌표는 캔버스 픽셀이 아니라 **슬라이드 기준 0~1 비율**이다. 교사 화면과
+ * 학생 화면의 실제 렌더 크기가 서로 다르므로(각자 자기 화면에 맞춰 그린다),
+ * 비율로 저장해야 어느 기기에서든 같은 자리에 그려진다.
+ *
+ * 굵기는 고정값이라 담지 않는다. color 가 없으면 렌더링 쪽에서 기본색으로
+ * 대체한다.
+ */
+export interface InkStroke {
+  points: InkPoint[]
+  color?: string
+}
+
+/** strokes 가 없을 때 매번 새 배열을 만들지 않기 위한 공유 빈 배열. */
+export const EMPTY_INK_STROKES: InkStroke[] = []
 
 export interface PresentationState {
   active: boolean
   currentSlide: number
   updatedAt: number
+  /** 슬라이드 번호(1부터) → 그 쪽에 그린 펜 획들. Firestore 맵이라 키는
+   *  실제로는 문자열이지만, 대괄호 접근이 숫자를 문자열로 바꿔주므로
+   *  호출부는 숫자로 그냥 읽고 쓴다. 아무도 안 그렸으면 필드가 없다. */
+  ink?: Record<number, InkStroke[]>
 }
 
 const IDLE: PresentationState = { active: false, currentSlide: 1, updatedAt: 0 }
@@ -55,8 +90,60 @@ export async function startPresentation(activityId: string, atSlide: number): Pr
   } satisfies PresentationState)
 }
 
+/**
+ * 발표를 끝낸다.
+ *
+ * 파워포인트 펜처럼 그동안 그린 자국은 여기서 전부 버린다 — "잉크를
+ * 유지할까요?" 같은 선택지는 두지 않는다.
+ *
+ * deleteField() 를 쓰는 이유: merge:true 는 중첩 맵을 깊이 병합하므로 빈
+ * 객체로 덮어써도 옛 획이 남는다. 필드 자체를 지워야 한다.
+ */
 export async function stopPresentation(activityId: string): Promise<void> {
-  await setDoc(presentationRef(activityId), { active: false, updatedAt: Date.now() }, { merge: true })
+  await setDoc(
+    presentationRef(activityId),
+    { active: false, updatedAt: Date.now(), ink: deleteField() },
+    { merge: true },
+  )
+}
+
+/**
+ * 방금 그은 획 하나를 그 슬라이드에 더한다.
+ *
+ * 포인터가 움직일 때마다가 아니라 **펜을 뗀 시점에 한 번만** 부른다. 매
+ * 프레임 쓰면 무료 쓰기 한도가 순식간에 녹는다.
+ */
+export async function addInkStroke(
+  activityId: string,
+  slide: number,
+  stroke: InkStroke,
+): Promise<void> {
+  await updateDoc(presentationRef(activityId), {
+    [`ink.${slide}`]: arrayUnion(stroke),
+  })
+}
+
+/** 슬라이드를 넘길 때는 그대로 두고, "전체 지우기"를 눌렀을 때만 지운다. */
+export async function clearInkForSlide(activityId: string, slide: number): Promise<void> {
+  await updateDoc(presentationRef(activityId), {
+    [`ink.${slide}`]: deleteField(),
+  })
+}
+
+/**
+ * 지우개로 일부만 지운 뒤 남은 획으로 그 슬라이드를 통째로 덮어쓴다.
+ *
+ * addInkStroke(arrayUnion)와 달리 배열 전체를 준다 — 지우개는 "무엇을
+ * 지울지"가 아니라 "무엇이 남는지"를 클라이언트가 이미 계산해서 알고 있다.
+ */
+export async function setInkForSlide(
+  activityId: string,
+  slide: number,
+  strokes: InkStroke[],
+): Promise<void> {
+  await updateDoc(presentationRef(activityId), {
+    [`ink.${slide}`]: strokes,
+  })
 }
 
 export async function setCurrentSlide(activityId: string, slide: number): Promise<void> {

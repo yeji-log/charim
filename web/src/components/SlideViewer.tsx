@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type * as PptxPreview from 'pptx-preview'
 
 import PdfViewer from './PdfViewer'
@@ -27,6 +27,7 @@ export default function SlideViewer({
   onPageCountChange,
   hideControls,
   fill,
+  overlay,
 }: {
   pptxFile: Blob | null
   pdfFile: Blob | null
@@ -38,6 +39,8 @@ export default function SlideViewer({
   hideControls?: boolean
   /** 컨테이너를 꽉 채운다(발표 화면). */
   fill?: boolean
+  /** 슬라이드 위에 겹쳐 그릴 것(펜 오버레이). */
+  overlay?: ReactNode
 }) {
   /** pptx-preview 가 실제로 그리는 대상. 로딩 중엔 hidden 이라 폭이 0이 된다. */
   const containerRef = useRef<HTMLDivElement>(null)
@@ -134,6 +137,7 @@ export default function SlideViewer({
         onPageCountChange={onPageCountChange}
         hideControls={hideControls}
         fill={fill}
+        overlay={overlay}
       />
     )
   }
@@ -156,7 +160,11 @@ export default function SlideViewer({
     >
       {state === 'loading' && <p className="text-sm text-muted">여는 중…</p>}
 
-      <div ref={containerRef} className={state === 'pptx' ? 'max-w-full overflow-x-auto' : 'hidden'} />
+      {/* pptx 는 컨테이너 안에 직접 그려지므로 그 박스에 오버레이를 겹친다. */}
+      <div className={state === 'pptx' ? 'relative w-fit max-w-full' : 'hidden'}>
+        <div ref={containerRef} className="max-w-full" />
+        {state === 'pptx' && overlay}
+      </div>
 
       {state === 'pptx' && !hideControls && slideCount > 0 && (
         <div className="flex items-center gap-3 text-sm">

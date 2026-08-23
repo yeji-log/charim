@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
 import SlideSection from '../components/SlideSection'
-import TeacherPresenter from '../components/TeacherPresenter'
 import { useLessonScope } from '../lib/lessonScope'
 import { getActivity, type Activity, type Section } from '../lib/lessons'
 
@@ -80,8 +79,6 @@ export default function ActivityDetail() {
           </a>
         )}
       </header>
-
-      {isTeacher && <TeacherPresenter activityId={activity.id} />}
 
       {activity.sections.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-line p-10 text-center text-sm text-muted">

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 
 /**
  * PDF 뷰어.
@@ -59,6 +59,7 @@ export default function PdfViewer({
   onPageCountChange,
   hideControls,
   fill,
+  overlay,
 }: {
   file: Blob
   /** 주면 "제어되는" 뷰어가 된다 — 발표 모드에서 교사 조작이나 실시간으로
@@ -71,6 +72,10 @@ export default function PdfViewer({
   hideControls?: boolean
   /** 컨테이너를 꽉 채운다 — 폭뿐 아니라 높이에도 맞춘다(발표 화면). */
   fill?: boolean
+  /** 그려진 캔버스 **위에 정확히 겹쳐** 그릴 것(펜 오버레이). 캔버스를
+   *  감싸는 wrapper 가 w-fit 으로 캔버스 크기에 딱 맞게 줄어들어서, 위치나
+   *  크기를 따로 재지 않아도 항상 겹친다. */
+  overlay?: ReactNode
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -288,7 +293,10 @@ export default function PdfViewer({
     >
       {loading && <p className="text-sm text-muted">여는 중…</p>}
 
-      <canvas ref={canvasRef} className="max-w-full rounded-lg" />
+      <div className="relative w-fit max-w-full">
+        <canvas ref={canvasRef} className="block max-w-full rounded-lg" />
+        {overlay}
+      </div>
 
       {!hideControls && pageCount > 0 && (
         <div className="flex items-center gap-3 text-sm">
