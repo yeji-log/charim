@@ -8,6 +8,7 @@ import TeacherPinBadge from '../components/TeacherPinBadge'
 import { getClub, listClubs, type ClubMeta } from '../lib/clubs'
 import { listActivities, type Activity } from '../lib/lessons'
 import { isPinUnlocked } from '../lib/pinUnlock'
+import { listAllTeacherPages } from '../lib/teacherPages'
 
 /**
  * 동아리 목록 — `/club`.
@@ -18,6 +19,11 @@ import { isPinUnlocked } from '../lib/pinUnlock'
  *
  * 수업자료 탭과 똑같이 로그인 상태로 갈린다. 교사에게는 **자기 동아리만**
  * 보여준다. 남의 동아리가 섞여 있어봐야 자기 것을 찾는 데 방해만 된다.
+ *
+ * 카드마다 지도 교사 이름을 붙인다. 이게 학생이 자기 동아리를 찾는 유일한
+ * 단서다 — "코딩반"이 둘이면 이름만으로는 못 고른다. 한때 교사 공개 페이지
+ * (`/t/{슬러그}`)에도 동아리를 띄웠다가 뺐는데(TeacherPublicPage.tsx 참고),
+ * 그래서 여기가 동아리로 가는 유일한 길이 됐다.
  */
 export default function Clubs() {
   const { state: authState, user } = useAuth()
@@ -25,6 +31,8 @@ export default function Clubs() {
   const uid = user?.uid
 
   const [clubs, setClubs] = useState<ClubMeta[] | null>(null)
+  /** 교사 uid -> 표시 이름. teacherPages 가 공개 읽기라 추가 권한이 필요 없다. */
+  const [teacherNames, setTeacherNames] = useState<Record<string, string>>({})
   const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
@@ -36,10 +44,19 @@ export default function Clubs() {
     setClubs(null)
     setLoadError(false)
 
-    listClubs()
-      .then((loaded) => {
+    // 교사에게는 자기 것만 보여주므로 이름표가 필요 없다 — 그때는 교사 목록을
+    // 아예 안 읽는다.
+    Promise.all([listClubs(), isTeacher ? Promise.resolve([]) : listAllTeacherPages()])
+      .then(([loaded, teachers]) => {
         if (cancelled) return
         setClubs(isTeacher && uid ? loaded.filter((club) => club.ownerUid === uid) : loaded)
+        setTeacherNames(
+          Object.fromEntries(
+            teachers
+              .filter((teacher) => teacher.displayName.trim())
+              .map((teacher) => [teacher.uid, teacher.displayName]),
+          ),
+        )
       })
       .catch((caught) => {
         if (cancelled) return
@@ -77,7 +94,7 @@ export default function Clubs() {
       <p className="mt-1 text-sm text-muted">
         {isTeacher
           ? '선생님마다 동아리를 하나씩 엽니다. 여기에는 내 동아리만 보입니다.'
-          : '들어갈 동아리를 고르세요.'}
+          : '지도 선생님을 보고 자기 동아리를 고르세요.'}
       </p>
 
       {clubs.length === 0 ? (
@@ -105,6 +122,11 @@ export default function Clubs() {
                 className="rounded-2xl border border-line bg-surface p-6 transition-colors hover:border-secondary"
               >
                 <h2 className="text-lg font-bold text-text">{club.name}</h2>
+                {teacherNames[club.ownerUid] && (
+                  <p className="mt-1 text-sm font-semibold text-primary">
+                    {teacherNames[club.ownerUid]}
+                  </p>
+                )}
                 <p className="mt-1.5 text-sm text-muted">
                   {!club.published
                     ? '준비 중 — 학생에게는 아직 안 보입니다'
@@ -119,6 +141,9 @@ export default function Clubs() {
                 className="rounded-2xl border border-dashed border-line p-6 opacity-70"
               >
                 <h2 className="text-lg font-bold text-muted">{club.name}</h2>
+                {teacherNames[club.ownerUid] && (
+                  <p className="mt-1 text-sm text-muted">{teacherNames[club.ownerUid]}</p>
+                )}
                 <p className="mt-1.5 text-sm text-muted">준비 중입니다</p>
               </div>
             ),
