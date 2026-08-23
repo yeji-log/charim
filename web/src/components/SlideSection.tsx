@@ -41,6 +41,8 @@ export default function SlideSection({
 }) {
   const { state: authState } = useAuth()
   const isTeacher = authState === 'teacher'
+  /** 교사인지 아직 확인 중이면 (1) 판정을 미룬다 — 아래 효과 참고. */
+  const authReady = authState !== 'loading'
 
   const [has, setHas] = useState<{ pptx: boolean; pdf: boolean } | null>(null)
   const [files, setFiles] = useState<{ pptx: Blob | null; pdf: Blob | null } | null>(null)
@@ -90,13 +92,36 @@ export default function SlideSection({
 
   useEffect(() => subscribePresentation(activityId, setPresentation), [activityId])
 
-  // 방송 중이면 지금 쪽을 기억해둔다 — 발표를 껐다 다시 켤 때 끝낸 자리에서
-  // 이어지게 하려는 것이다.
+  /**
+   * 훑어보기 쪽을 발표 상태에 맞춘다 — **딱 두 순간에만.**
+   *
+   * (1) 화면을 처음 열었을 때, **교사만.** currentSlide 는 지난번에 발표를
+   *     끝낸 자리다(stopPresentation 이 이 값을 건드리지 않는다). 교사는 다음
+   *     시간에 그 자리에서 이어서 시작하는 게 맞지만, 학생이 수업 뒤에 자료를
+   *     복습하러 들어왔을 때 20쪽부터 뜨는 건 이상하다 — 학생은 1쪽부터다.
+   *     CHICODE 는 여기서 교사·학생을 가르지 않았는데, 그건 교사 한 명이
+   *     쓰는 서비스라 갈릴 일이 없었기 때문이다.
+   * (2) 방송이 막 끝난 순간. **이건 학생에게도 적용한다.** 이게 없으면 발표를
+   *     끝내는 순간 뒤에 깔려 있던 뷰어가 그대로 드러나는데, 학생 화면에서는
+   *     그게 1쪽이다 — 12쪽을 설명하다 끝냈는데 모두의 화면이 1쪽으로 튄다.
+   *
+   * 방송 **중에는** 일부러 따라가지 않는다. 오버레이가 이미 덮고 있는데 뒤에
+   * 깔린 뷰어까지 슬라이드마다 다시 그리면 넘길 때마다 PDF 렌더가 두 번씩
+   * 돈다 — 갤럭시탭에서 그대로 버벅임이 된다.
+   */
+  const syncedOnce = useRef(false)
+  const wasActive = useRef(false)
   useEffect(() => {
-    if (presentation?.active) setBrowsePage(presentation.currentSlide)
-  }, [presentation?.active, presentation?.currentSlide])
-
-  const active = presentation?.active ?? false
+    // 멤버 확인이 끝나기 전에 판정하면 교사도 학생으로 잡힌다. 그 상태로
+    // syncedOnce 를 세워버리면 (1)이 영영 안 일어난다 — 확인이 끝날 때까지
+    // 아무것도 하지 않는다.
+    if (!presentation || !authReady) return
+    const justEnded = wasActive.current && !presentation.active
+    const firstLoadForTeacher = !syncedOnce.current && isTeacher
+    if (firstLoadForTeacher || justEnded) setBrowsePage(presentation.currentSlide)
+    syncedOnce.current = true
+    wasActive.current = presentation.active
+  }, [presentation, isTeacher, authReady])
 
   /**
    * 제목과 발표 버튼을 한 줄에 둔다. 상태에 따라 오른쪽 내용만 바뀐다 —
@@ -115,7 +140,14 @@ export default function SlideSection({
     return header(<span className="text-sm text-muted">아직 올라온 수업 자료가 없습니다.</span>)
   }
 
-  if (!files) return header(<span className="text-sm text-muted">여는 중…</span>)
+  // 발표 상태가 도착하기 전에는 뷰어를 그리지 않는다. 먼저 그리면 1쪽으로
+  // 마운트됐다가 진짜 쪽으로 튀는 깜빡임이 생긴다. 파일 내려받기가 더
+  // 오래 걸려서 실제로는 이 대기가 눈에 띄지 않는다.
+  if (!files || !presentation || !authReady) {
+    return header(<span className="text-sm text-muted">여는 중…</span>)
+  }
+
+  const active = presentation.active
 
   return (
     <div className="flex flex-col gap-3">
@@ -124,7 +156,7 @@ export default function SlideSection({
           <>
             {active && (
               <span className="rounded-md bg-success/15 px-2 py-0.5 text-xs font-semibold text-success">
-                발표 중 · {presentation?.currentSlide} 쪽
+                발표 중 · {presentation.currentSlide} 쪽
               </span>
             )}
 
@@ -151,21 +183,29 @@ export default function SlideSection({
         ) : null,
       )}
 
-      {/* 평소 뷰어. 발표 중에는 전체화면이 덮는다. */}
-      <SlideViewer pptxFile={files.pptx} pdfFile={files.pdf} />
+      {/* 평소 뷰어. 발표 중에는 전체화면이 덮는다.
+          page 를 넘겨 제어되는 뷰어로 쓴다 — 발표가 끝났을 때 방금 보여주던
+          쪽에 그대로 남으려면 부모가 쪽을 들고 있어야 한다. 넘기는 조작은
+          onPageChange 로 되돌아와 그대로 동작한다. */}
+      <SlideViewer
+        pptxFile={files.pptx}
+        pdfFile={files.pdf}
+        page={browsePage}
+        onPageChange={setBrowsePage}
+      />
 
       {active && !presenterOpen && (
         <PresentationOverlay
           pptxFile={files.pptx}
           pdfFile={files.pdf}
-          slide={presentation!.currentSlide}
-          ink={presentation?.ink}
+          slide={presentation.currentSlide}
+          ink={presentation.ink}
           isTeacher={isTeacher}
           onTakeControl={() => setPresenterOpen(true)}
         />
       )}
 
-      {presenterOpen && isTeacher && presentation && (
+      {presenterOpen && isTeacher && (
         <SlidePresenter
           activityId={activityId}
           pptxFile={files.pptx}

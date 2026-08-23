@@ -79,6 +79,17 @@ export default function SlidePresenter({
     if (!active) setPenActive(false)
   }, [active])
 
+  // 방송 중에는 훑어보기 쪽(browsing)도 지금 쪽을 따라가게 둔다.
+  //
+  // slide 는 active 일 때 presentation.currentSlide 를, 아닐 때 browsing 을
+  // 본다. browsing 을 창 열 때 값 그대로 두면 "발표 끝내기"를 누르는 순간
+  // 화면이 창을 열었던 쪽으로 튄다 — 12쪽을 설명하다 끝냈는데 3쪽이 뜨는
+  // 식이다. 끝낸 자리가 그대로 남아 있어야 이어서 설명할 수 있고, "이 쪽부터
+  // 발표 시작"도 그 자리에서 재개된다.
+  useEffect(() => {
+    if (active) setBrowsing(presentation.currentSlide)
+  }, [active, presentation.currentSlide])
+
   function flushPending() {
     if (!pendingRef.current) return
     window.clearTimeout(saveTimerRef.current)
