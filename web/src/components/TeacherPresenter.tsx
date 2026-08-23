@@ -39,7 +39,7 @@ export default function TeacherPresenter({ activityId }: { activityId: string })
   if (!hasSlides) {
     return (
       <p className="rounded-xl border border-dashed border-line px-4 py-2.5 text-sm text-muted">
-        발표자료를 올리면 여기서 발표를 시작할 수 있습니다. 수업 편집 화면의 발표자료 항목에서
+        수업 자료를 올리면 여기서 발표를 시작할 수 있습니다. 수업 편집 화면의 수업자료 항목에서
         올려 주세요.
       </p>
     )
@@ -107,7 +107,7 @@ function PresenterOverlay({
         setNotes(loadedNotes)
       })
       .catch((caught) => {
-        console.error('발표자료 불러오기 실패', caught)
+        console.error('수업 자료 불러오기 실패', caught)
         if (!cancelled) setFiles({ pptx: null, pdf: null })
       })
 

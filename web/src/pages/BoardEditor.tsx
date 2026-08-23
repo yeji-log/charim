@@ -545,7 +545,7 @@ function SectionEditor({
           >
             ▼
           </button>
-          {/* 발표자료 자리는 지울 수 없다 — 지워도 normalizeActivity 가 맨
+          {/* 수업자료 자리는 지울 수 없다 — 지워도 normalizeActivity 가 맨
               끝에 다시 채워 넣어서, 지우는 것처럼 보이다가 위치만 잃는다. */}
           {section.kind !== 'slides' && (
             <button

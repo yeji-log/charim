@@ -58,11 +58,15 @@ export interface Section {
 }
 
 /**
- * 발표자료 자리를 표시하는 특수 항목.
+ * 수업자료(수업 시간에 화면에 띄울 PPT·PDF) 자리를 표시하는 특수 항목.
+ *
+ * 이름이 과목의 "자료" 탭(학생이 내려받는 파일)과 비슷해서 헷갈리기 쉽다.
+ * 교사가 쓰는 말이 "수업자료"라 화면에서는 이 이름을 쓰되, 코드에서는
+ * slides 로 부른다 — 파일 성격이 다르고 저장 위치도 다르다(slides.ts).
  *
  * 내용은 여기 content 가 아니라 slides.ts 에 파일로 저장되지만, **"몇 번째
  * 순서에 보일지"는 다른 항목과 똑같이 배열 위치로 정한다** — 그래야 교사가
- * 발표자료 위치도 화살표로 옮길 수 있다.
+ * 수업자료 위치도 화살표로 옮길 수 있다.
  *
  * 수업 하나에 정확히 하나만 있고 교사가 지울 수 없다. 없으면 normalizeActivity
  * 가 맨 끝에 자동으로 채운다.
@@ -74,7 +78,7 @@ export function isSlidesSection(section: Section): boolean {
 }
 
 export function makeSlidesSection(): Section {
-  return { id: SLIDES_SECTION_ID, title: '발표자료', content: '', isCode: false, kind: 'slides' }
+  return { id: SLIDES_SECTION_ID, title: '수업자료', content: '', isCode: false, kind: 'slides' }
 }
 
 export interface ChecklistItem {
@@ -137,7 +141,7 @@ const activityRef = (id: string) => doc(db, ...wsPath('activities', id))
 
 function normalizeActivity(id: string, data: Record<string, unknown>): Activity {
   const sections = Array.isArray(data.sections) ? (data.sections as Section[]) : []
-  // 발표자료 자리가 없는 수업(이 기능 이전에 만든 것)은 맨 끝에 채워 넣는다.
+  // 수업자료 자리가 없는 수업(이 기능 이전에 만든 것)은 맨 끝에 채워 넣는다.
   const withSlides = sections.some(isSlidesSection) ? sections : [...sections, makeSlidesSection()]
 
   return {
@@ -238,9 +242,9 @@ export async function addActivity(input: ActivityInput): Promise<Activity> {
   const now = Date.now()
   const { courseId, ...rest } = input
 
-  // **만들 때도 발표자료 자리를 채운다.** 예전엔 normalizeActivity(읽을 때)만
-  // 채웠는데, 그러면 방금 만든 수업을 바로 편집창에서 열었을 때 발표자료 항목이
-  // 없다 — 화면을 새로고침해야 나타나서 "발표자료를 올릴 곳이 없다"로 보인다.
+  // **만들 때도 수업자료 자리를 채운다.** 예전엔 normalizeActivity(읽을 때)만
+  // 채웠는데, 그러면 방금 만든 수업을 바로 편집창에서 열었을 때 수업자료 항목이
+  // 없다 — 화면을 새로고침해야 나타나서 "수업 자료를 올릴 곳이 없다"로 보인다.
   // 읽기 쪽 보정은 그대로 두되(옛 문서 대비) 여기서도 보장한다.
   const sections = rest.sections.some(isSlidesSection)
     ? rest.sections

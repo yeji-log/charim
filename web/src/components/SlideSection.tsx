@@ -5,13 +5,13 @@ import { subscribePresentation, type PresentationState } from '../lib/presentati
 import { getSlidePdfFile, getSlidePptxFile, getSlideSet } from '../lib/slides'
 
 /**
- * 수업 상세에 들어가는 발표자료 항목(kind: 'slides').
+ * 수업 상세에 들어가는 수업자료 항목(kind: 'slides').
  *
  * 발표가 켜져 있으면 **전체화면으로 덮고 교사가 넘기는 쪽을 그대로 따라간다.**
  * 꺼져 있으면 그냥 자기 페이스로 넘겨보는 뷰어다.
  *
  * 파일은 무겁다(최대 25MB, base64 로 더 커진다). 그래서 이 항목이 화면에
- * 나타날 때 메타데이터만 먼저 읽고, 실제 파일은 학생이 "발표자료 보기"를
+ * 나타날 때 메타데이터만 먼저 읽고, 실제 파일은 학생이 "수업 자료 보기"를
  * 누르거나 발표가 시작될 때만 내려받는다 — 수업 내용을 글만 읽으러 들어온
  * 학생이 25MB 를 받게 하면 안 된다.
  */
@@ -29,7 +29,7 @@ export default function SlideSection({ activityId }: { activityId: string }) {
         if (!cancelled) setHas({ pptx: !!set.pptx, pdf: !!set.pdf })
       })
       .catch((caught) => {
-        console.error('발표자료 확인 실패', caught)
+        console.error('수업 자료 확인 실패', caught)
         if (!cancelled) setHas({ pptx: false, pdf: false })
       })
     return () => {
@@ -54,7 +54,7 @@ export default function SlideSection({ activityId }: { activityId: string }) {
       ])
       setFiles({ pptx, pdf })
     } catch (caught) {
-      console.error('발표자료 불러오기 실패', caught)
+      console.error('수업 자료 불러오기 실패', caught)
     } finally {
       setLoading(false)
       loadingRef.current = false
@@ -70,7 +70,7 @@ export default function SlideSection({ activityId }: { activityId: string }) {
   if (has === null) return <p className="text-sm text-muted">확인 중…</p>
 
   if (!hasAny) {
-    return <p className="text-sm text-muted">아직 올라온 발표자료가 없습니다.</p>
+    return <p className="text-sm text-muted">아직 올라온 수업 자료가 없습니다.</p>
   }
 
   if (presentation?.active && files) {
@@ -95,7 +95,7 @@ export default function SlideSection({ activityId }: { activityId: string }) {
         disabled={loading}
         className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-50"
       >
-        {loading ? '여는 중…' : '발표자료 보기'}
+        {loading ? '여는 중…' : '수업 자료 보기'}
       </button>
     )
   }

@@ -6,7 +6,7 @@ import PdfViewer from './PdfViewer'
 type PptxPreviewer = ReturnType<typeof PptxPreview.init>
 
 /**
- * 발표자료 뷰어.
+ * 수업자료(PPT·PDF) 뷰어.
  *
  * pptx-preview 로 .pptx 렌더링을 먼저 시도하고, **실패하면 조용히 PDF 로
  * 넘어간다.** CHICODE 가 테스트했을 때 이 라이브러리가 렌더링 도중 내부에서
@@ -15,7 +15,7 @@ type PptxPreviewer = ReturnType<typeof PptxPreview.init>
  * 없어서, 교사가 PDF 를 함께 올리면 그쪽으로 대체한다.
  *
  * 원본 Blob 은 렌더링에만 쓰고 다운로드 링크나 URL 로 내보내지 않는다 —
- * 학생이 발표자료 원본을 받아가지 못하게 하려는 것이다. 핀과 같은 수준의
+ * 학생이 원본 파일을 받아가지 못하게 하려는 것이다. 핀과 같은 수준의
  * 가벼운 방지다(화면 캡처까지 막을 수는 없다).
  */
 export default function SlideViewer({
@@ -130,7 +130,7 @@ export default function SlideViewer({
   if (state === 'failed') {
     return (
       <p className="rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
-        발표자료를 표시하지 못했습니다. 선생님께 PDF 를 함께 올려달라고 요청해 주세요.
+        수업 자료를 표시하지 못했습니다. 선생님께 PDF 를 함께 올려달라고 요청해 주세요.
       </p>
     )
   }

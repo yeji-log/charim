@@ -17,7 +17,7 @@ const ghost =
   'rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-muted transition-colors hover:border-secondary hover:text-text disabled:cursor-not-allowed disabled:opacity-50'
 
 /**
- * 발표자료 올리기 — 수업 편집 안의 "발표자료" 항목 자리에 들어간다.
+ * 수업자료 올리기 — 수업 편집 안의 "수업자료" 항목 자리에 들어간다.
  *
  * PPT 와 PDF 를 따로 받는다. **둘 다 올리는 걸 권한다:**
  * - PPT 를 올리면 발표자 노트를 자동으로 뽑아 대본을 채워준다
@@ -35,7 +35,7 @@ export default function SlideUploader({ activityId }: { activityId: string }) {
     getSlideSet(activityId)
       .then(setSet)
       .catch((caught) => {
-        console.error('발표자료 확인 실패', caught)
+        console.error('수업 자료 확인 실패', caught)
         setSet({ pptx: null, pdf: null })
       })
   }, [activityId])
@@ -106,7 +106,7 @@ export default function SlideUploader({ activityId }: { activityId: string }) {
         pdf: which === 'pdf' ? null : (prev?.pdf ?? null),
       }))
     } catch (caught) {
-      console.error('발표자료 삭제 실패', caught)
+      console.error('수업 자료 삭제 실패', caught)
       setError('지우지 못했습니다.')
     }
   }
