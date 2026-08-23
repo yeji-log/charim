@@ -18,6 +18,8 @@ export const PRIVACY_POLICY_EFFECTIVE_DATE = '2026. 8. 23.'
  * - Firestore 리전: `firebase firestore:databases:get "(default)"` 로 실측 —
  *   asia-northeast3(서울). 추측하지 말고 이 명령으로 다시 확인할 것.
  * - 분석 도구·외부 임베드 없음: analytics / gtag / iframe grep 0건
+ * - 제11조 기관 연락처: kopico.go.kr 과 privacy.kisa.or.kr 을 직접 열어 확인했다
+ *   (1833-6972 / 118). 바뀔 수 있으니 손볼 때 다시 볼 것.
  * - members/{uid} 필드: email, name, role (2026-08-23 Firebase 콘솔에서 확인).
  *   규칙이 본인 문서만 열어주고 firebase-tools 에는 문서를 읽는 명령이 없어서
  *   코드로는 확인할 수 없다 — 필드를 바꾸면 제1조도 함께 고칠 것.
@@ -82,7 +84,7 @@ export default function PrivacyPolicy() {
         <p>
           교사가 정한 공개 주소(<code className="font-mono">/t/&#123;주소&#125;</code>)와 거기
           표시할 이름도 누구나 읽을 수 있습니다. 표시 이름은 실명이 아니어도 되며 교사가 직접
-          정합니다.
+          정합니다. 동아리를 연 경우 동아리 이름과 지도 교사의 표시 이름도 같이 공개됩니다.
         </p>
       </PolicyArticle>
 
@@ -134,13 +136,19 @@ export default function PrivacyPolicy() {
               </>,
             ],
             ['교사 표시 이름·공개 주소', '누구나'],
-            ['과목·수업자료·수업 내용·발표자료', '누구나 (제9조 참고)'],
+            ['과목·동아리·수업자료·수업 내용·발표자료', '누구나 (제9조 참고)'],
           ]}
         />
         <p>
           한 반을 여러 과목 교사가 함께 담당하는 경우 그 교사들은 같은 명단 하나를
           공유합니다. 명단을 한 번만 만들면 되도록 한 것이며, 그 반에 들어가지 않는 교사에게는
           명단의 존재 자체가 보이지 않습니다.
+        </p>
+        <p>
+          <strong>다만 위 범위는 서비스 화면을 통한 접근에 적용됩니다.</strong> 서비스 운영을
+          맡은 관리자는 장애 대응·데이터 관리를 위해 데이터베이스 관리 콘솔에서 저장된
+          데이터에 접근할 수 있습니다. 관리자를 한 명만 두면 그 사람이 계정을 잃었을 때 아무도
+          손을 쓸 수 없어, 최소한의 인원으로 나누어 두고 있습니다.
         </p>
       </PolicyArticle>
 
@@ -161,6 +169,11 @@ export default function PrivacyPolicy() {
           다른 교사가 남긴 참여 기록은 서버 규칙상 본인만 지울 수 있어 남을 수 있습니다.
           여기에는 이름도 학번도 없이 내부 식별자(임의로 생성된 문자열)와 참여 여부만 들어
           있어, 명단이 지워진 뒤에는 그 자체로 누구인지 알 수 없습니다.
+        </p>
+        <p>
+          <strong>파기 방법</strong> — 삭제하면 데이터베이스에서 바로 지워집니다. 차림은 별도의
+          백업본을 만들어 두지 않으므로 지운 것을 되살릴 수 없고, 따로 보관되는 사본도
+          없습니다. 종이로 출력해 보관하는 개인정보는 취급하지 않습니다.
         </p>
       </PolicyArticle>
 
@@ -321,7 +334,43 @@ export default function PrivacyPolicy() {
         </p>
       </PolicyArticle>
 
-      <PolicyArticle num="제11조" title="방침의 변경">
+      <PolicyArticle num="제11조" title="권익침해 구제방법">
+        <p>
+          개인정보 침해로 인한 상담이나 피해 구제가 필요하시면 아래 기관에 문의하실 수
+          있습니다. 차림과 별개의 기관입니다.
+        </p>
+        <ul>
+          <li>
+            개인정보분쟁조정위원회 — 1833-6972 (
+            <a
+              href="https://kopico.go.kr"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-primary underline"
+            >
+              kopico.go.kr
+            </a>
+            )
+          </li>
+          <li>
+            개인정보침해 신고센터 — 118 (
+            <a
+              href="https://privacy.kisa.or.kr"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-primary underline"
+            >
+              privacy.kisa.or.kr
+            </a>
+            )
+          </li>
+        </ul>
+        <p>
+          그 밖에 수사가 필요한 사안은 경찰 등 수사기관에 신고하실 수 있습니다.
+        </p>
+      </PolicyArticle>
+
+      <PolicyArticle num="제12조" title="방침의 변경">
         <p>
           이 방침은 법령, 정책 또는 서비스 내용의 변경에 따라 수정될 수 있으며, 변경 시 이
           페이지를 통해 공지합니다.
