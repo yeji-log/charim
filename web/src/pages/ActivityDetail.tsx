@@ -66,30 +66,15 @@ export default function ActivityDetail() {
     )
   }
 
-  // 시즌 자체가 준비중이면 목록(ActivityList.tsx)에서 이미 "잠긴 미리보기"로
-  // 존재를 알려준 상태다 — 그래서 여기서도 같은 사실을 그대로 알려준다.
-  if (!isTeacher && seasonPreparing) {
+  // 잠긴 상태 — 시즌 자체가 준비중이거나, 이 활동 하나만 비공개인 경우.
+  // 둘 다 목록(ActivityList.tsx)에서 이미 "잠긴 미리보기"로 제목을 보여준
+  // 상태라, 여기서도 같은 사실을 그대로 알려준다. 주소를 직접 알아도
+  // 건너뛸 수 없다.
+  if (!isTeacher && (seasonPreparing || !activity.published)) {
     return (
       <div className="rounded-2xl border border-warning/40 bg-warning/10 p-10 text-center">
-        <p className="font-bold text-text">🔒 아직 준비 중인 {scope.seasonNoun}예요.</p>
+        <p className="font-bold text-text">🔒 아직 준비 중이에요.</p>
         <p className="mt-1 text-sm text-muted">열리면 들어갈 수 있습니다.</p>
-        <Link
-          to={scope.activitiesPath}
-          className="mt-4 inline-block text-sm font-semibold text-primary underline"
-        >
-          목록으로
-        </Link>
-      </div>
-    )
-  }
-
-  // 시즌은 준비중이 아니지만 이 활동 하나만 비공개인 경우, 학생에게는 없는
-  // 것과 같게 다룬다 — "준비 중입니다"라고 알려주면 목록에 없는 내용의 존재가
-  // 드러난다(시즌 단위 잠금과 달리 목록에도 안 보이는 상태이기 때문).
-  if (!isTeacher && !activity.published) {
-    return (
-      <div className="rounded-2xl border border-line bg-surface p-10 text-center">
-        <p className="font-bold text-text">찾는 {scope.activityNoun}이(가) 없습니다.</p>
         <Link
           to={scope.activitiesPath}
           className="mt-4 inline-block text-sm font-semibold text-primary underline"

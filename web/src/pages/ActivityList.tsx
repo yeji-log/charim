@@ -20,12 +20,11 @@ export default function ActivityList() {
   useEffect(() => {
     let cancelled = false
 
+    // publishedOnly 를 안 준다 — 비공개 수업 내용도 제목은 학생에게 잠긴
+    // 미리보기로 보여줘야 해서, 걸러내지 않고 전부 받아온 뒤 이 화면에서
+    // 항목별로 잠글지 정한다.
     Promise.all([
-      listActivities({
-        courseId: scope.courseId,
-        seasonId: seasonId || undefined,
-        publishedOnly: !isTeacher,
-      }),
+      listActivities({ courseId: scope.courseId, seasonId: seasonId || undefined }),
       listSeasons(scope.courseId ? { courseId: scope.courseId } : undefined),
     ])
       .then(([loadedActivities, loadedSeasons]) => {
@@ -99,28 +98,51 @@ export default function ActivityList() {
         </>
       ) : (
         <ul className="flex flex-col gap-3">
-          {activities.map((activity) => (
-            <li key={activity.id}>
-              <Link
-                to={scope.activityDetailPath(activity.id)}
-                className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-secondary"
-              >
-                <div className="min-w-0 flex-1">
+          {activities.map((activity) => {
+            // 개별 수업 내용이 비공개거나, 소속 시즌 자체가 준비중이면
+            // 학생에게는 여기서도 잠긴 미리보기다("전체" 탭은 여러 시즌이
+            // 섞여 있어 시즌별로 다시 확인해야 한다). 제목은 보여주고 클릭만
+            // 막는다. 교사는 항상 평소 목록 그대로 본다.
+            const itsSeason = seasons.find((season) => season.id === activity.seasonId)
+            const locked = !isTeacher && (!activity.published || itsSeason?.status === '준비중')
+
+            if (locked) {
+              return (
+                <li
+                  key={activity.id}
+                  className="rounded-2xl border border-dashed border-line bg-surface/60 p-5"
+                >
                   <p className="font-bold text-text">{activity.title}</p>
-                  <p className="mt-0.5 text-xs text-muted">
-                    {activity.seasonId && seasonTitle(activity.seasonId)}
-                    {activity.seasonId && ' · '}
-                    항목 {activity.sections.length}개
+                  <p className="mt-1 text-xs font-semibold text-warning">
+                    🔒 준비중 — 열리면 들어갈 수 있습니다
                   </p>
-                </div>
-                {!activity.published && (
-                  <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning">
-                    준비 중
-                  </span>
-                )}
-              </Link>
-            </li>
-          ))}
+                </li>
+              )
+            }
+
+            return (
+              <li key={activity.id}>
+                <Link
+                  to={scope.activityDetailPath(activity.id)}
+                  className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-secondary"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-text">{activity.title}</p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {activity.seasonId && seasonTitle(activity.seasonId)}
+                      {activity.seasonId && ' · '}
+                      항목 {activity.sections.length}개
+                    </p>
+                  </div>
+                  {!activity.published && (
+                    <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-warning">
+                      준비 중
+                    </span>
+                  )}
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
