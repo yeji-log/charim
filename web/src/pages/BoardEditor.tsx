@@ -50,6 +50,8 @@ export default function BoardEditor({
   const [activities, setActivities] = useState<Activity[]>([])
   const [openActivity, setOpenActivity] = useState<Activity | null>(null)
   const [openSeason, setOpenSeason] = useState<Season | null>(null)
+  /** 공개 스위치를 저장하는 중인 활동 id. 연타로 요청이 겹치지 않게 잠근다. */
+  const [publishBusy, setPublishBusy] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
     const [loadedSeasons, loadedActivities] = await Promise.all([
@@ -94,6 +96,36 @@ export default function BoardEditor({
     })
     setActivities([...activities, created])
     setOpenActivity(created)
+  }
+
+  /**
+   * 목록에서 바로 공개/비공개를 뒤집는다.
+   *
+   * 전에는 활동을 열어 스위치를 켜고 저장까지 세 번 눌러야 했다. 수업 직전에
+   * "이건 아직 보여주면 안 되는데" 하고 급히 내리는 일이 잦은데, 그때 화면을
+   * 오가게 만들 이유가 없다.
+   *
+   * 화면을 먼저 바꾸고 저장한다 — 저장이 돌아올 때까지 스위치가 안 움직이면
+   * 안 눌린 줄 알고 또 누른다. 실패하면 되돌리고 콘솔에 남긴다.
+   */
+  async function handleTogglePublished(activity: Activity) {
+    if (!user) return
+    const next = !activity.published
+    const apply = (value: boolean) =>
+      setActivities((prev) =>
+        prev.map((entry) => (entry.id === activity.id ? { ...entry, published: value } : entry)),
+      )
+
+    setPublishBusy(activity.id)
+    apply(next)
+    try {
+      await updateActivity(activity.id, { published: next, updatedBy: user.uid })
+    } catch (caught) {
+      console.error('공개 여부 변경 실패', caught)
+      apply(!next)
+    } finally {
+      setPublishBusy(null)
+    }
   }
 
   if (!seasons) return <p className="text-sm text-muted">불러오는 중…</p>
@@ -154,20 +186,29 @@ export default function BoardEditor({
                 className="flex flex-wrap items-center gap-2 rounded-xl border border-line px-4 py-3"
               >
                 <span className="font-bold text-text">{activity.title}</span>
-                <span
-                  className={[
-                    'rounded-md px-2 py-0.5 text-xs font-semibold',
-                    activity.published
-                      ? 'bg-success/15 text-success'
-                      : 'bg-warning/15 text-warning',
-                  ].join(' ')}
-                >
-                  {activity.published ? '공개' : '준비 중'}
-                </span>
                 <span className="text-xs text-muted">항목 {activity.sections.length}개</span>
-                <button onClick={() => setOpenActivity(activity)} className={ghost + ' ml-auto'}>
-                  열기
-                </button>
+
+                {/* 배지가 아니라 스위치다 — 보여주기만 하는 표시였을 때는 공개를
+                    뒤집으려고 활동을 열고 저장까지 해야 했다. */}
+                <div className="ml-auto flex items-center gap-2">
+                  <ToggleSwitch
+                    checked={activity.published}
+                    onChange={() => handleTogglePublished(activity)}
+                    disabled={publishBusy === activity.id}
+                    label={`${activity.title} 학생에게 공개`}
+                  />
+                  <span
+                    className={[
+                      'w-12 shrink-0 text-xs font-semibold',
+                      activity.published ? 'text-success' : 'text-warning',
+                    ].join(' ')}
+                  >
+                    {activity.published ? '공개됨' : '준비 중'}
+                  </span>
+                  <button onClick={() => setOpenActivity(activity)} className={ghost}>
+                    열기
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

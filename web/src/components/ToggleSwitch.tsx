@@ -4,10 +4,13 @@ export default function ToggleSwitch({
   checked,
   onChange,
   label,
+  disabled = false,
 }: {
   checked: boolean
   onChange: () => void
   label: string
+  /** 저장이 오가는 동안 연타를 막을 때. 켜고 끈 모양은 그대로 두고 입력만 막는다. */
+  disabled?: boolean
 }) {
   return (
     <button
@@ -15,11 +18,15 @@ export default function ToggleSwitch({
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      disabled={disabled}
       onClick={onChange}
       className={[
         'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
         checked ? 'bg-primary' : 'bg-line',
-      ].join(' ')}
+        disabled ? 'cursor-not-allowed opacity-60' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       <span
         className={[
