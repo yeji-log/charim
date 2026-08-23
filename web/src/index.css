@@ -58,6 +58,15 @@
   --font-mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 }
 
+/* pptx-preview 는 자기 조작 UI 를 함께 그린다 — 회색 원형 화살표(40x40)와
+   "0/18" 쪽 표시다. 차림은 자체 조작 UI 를 쓰므로 감춘다. 특히 발표 중에는
+   학생이 임의로 슬라이드를 넘기면 안 되는데, 이 화살표가 그걸 뚫는다. */
+.pptx-preview-wrapper-next,
+.pptx-preview-wrapper-prev,
+.pptx-preview-wrapper-pagination {
+  display: none !important;
+}
+
 html,
 body,
 #root {

@@ -54,12 +54,25 @@ export default function TeacherPresenter({ activityId }: { activityId: string })
             진행 중 · {state.currentSlide} 쪽
           </span>
         )}
-        <button
-          onClick={() => setOpen(true)}
-          className="ml-auto rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
-        >
-          발표 화면 열기
-        </button>
+        <div className="ml-auto flex items-center gap-2">
+          {/* 발표를 켜둔 채 발표 화면을 닫아도 여기서 끝낼 수 있어야 한다.
+              끝낼 방법이 발표 화면 안에만 있으면, 창을 닫는 순간 학생 기기가
+              계속 발표 화면에 묶인 걸 교사가 되돌릴 수 없다. */}
+          {state?.active && (
+            <button
+              onClick={() => void stopPresentation(activityId)}
+              className="rounded-lg border border-error px-3 py-2 text-sm font-semibold text-error transition-colors hover:bg-error hover:text-white"
+            >
+              발표 끝내기
+            </button>
+          )}
+          <button
+            onClick={() => setOpen(true)}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+          >
+            {state?.active ? '발표 화면 다시 열기' : '발표 화면 열기'}
+          </button>
+        </div>
       </div>
 
       {open && (

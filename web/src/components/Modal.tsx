@@ -11,10 +11,13 @@ export default function Modal({
   title,
   onClose,
   children,
+  wide,
 }: {
   title: string
   onClose: () => void
   children: ReactNode
+  /** 항목을 여러 개 늘어놓는 편집창처럼 넓은 자리가 필요할 때. */
+  wide?: boolean
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
   // 닫은 뒤 원래 누르던 곳으로 포커스를 돌려준다 — 키보드로 시간표를 훑는
@@ -55,7 +58,10 @@ export default function Modal({
         aria-label={title}
         // 패널 안쪽 클릭이 배경까지 올라가 닫히지 않도록 막는다.
         onClick={(event) => event.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-surface shadow-xl outline-none sm:rounded-2xl"
+        className={[
+          'max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-surface shadow-xl outline-none sm:rounded-2xl',
+          wide ? 'max-w-4xl' : 'max-w-lg',
+        ].join(' ')}
       >
         <div className="sticky top-0 flex items-center gap-3 border-b border-line bg-surface px-5 py-4">
           <h2 className="text-base font-bold text-text">{title}</h2>

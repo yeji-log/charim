@@ -394,7 +394,7 @@ function ActivityEditor({
   }
 
   return (
-    <Modal title={`${noun} 편집`} onClose={onClose}>
+    <Modal title={`${noun} 편집`} onClose={onClose} wide>
       <div className="flex flex-col gap-5">
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="font-semibold text-text">제목</span>

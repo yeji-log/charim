@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { useAuth } from '../auth/AuthProvider'
+
 import SlideViewer from './SlideViewer'
 import { subscribePresentation, type PresentationState } from '../lib/presentation'
 import { getSlidePdfFile, getSlidePptxFile, getSlideSet } from '../lib/slides'
@@ -16,6 +18,14 @@ import { getSlidePdfFile, getSlidePptxFile, getSlideSet } from '../lib/slides'
  * 학생이 25MB 를 받게 하면 안 된다.
  */
 export default function SlideSection({ activityId }: { activityId: string }) {
+  const { state: authState } = useAuth()
+  // 교사에게는 학생용 전체화면을 띄우지 않는다.
+  //
+  // 교사는 자기 발표 화면(TeacherPresenter)에서 슬라이드를 넘기고 발표를
+  // 끝낸다. 그런데 학생용 오버레이는 조작 버튼이 하나도 없어서, 교사가 발표
+  // 화면을 닫으면 빠져나갈 수도 발표를 끝낼 수도 없는 전체화면에 갇혔다.
+  // 실제로 겪은 문제다.
+  const isTeacher = authState === 'teacher'
   const [has, setHas] = useState<{ pptx: boolean; pdf: boolean } | null>(null)
   const [files, setFiles] = useState<{ pptx: Blob | null; pdf: Blob | null } | null>(null)
   const [loading, setLoading] = useState(false)
@@ -63,7 +73,7 @@ export default function SlideSection({ activityId }: { activityId: string }) {
 
   // 발표가 시작되면 학생이 아무것도 누르지 않아도 화면이 뜨게 한다.
   useEffect(() => {
-    if (presentation?.active && hasAny && !files) void loadFiles()
+    if (presentation?.active && hasAny && !files && !isTeacher) void loadFiles()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [presentation?.active, hasAny])
 
@@ -73,7 +83,7 @@ export default function SlideSection({ activityId }: { activityId: string }) {
     return <p className="text-sm text-muted">아직 올라온 수업 자료가 없습니다.</p>
   }
 
-  if (presentation?.active && files) {
+  if (presentation?.active && files && !isTeacher) {
     return (
       <>
         <p className="text-sm font-semibold text-primary">
