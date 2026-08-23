@@ -18,6 +18,9 @@ export const PRIVACY_POLICY_EFFECTIVE_DATE = '2026. 8. 23.'
  * - Firestore 리전: `firebase firestore:databases:get "(default)"` 로 실측 —
  *   asia-northeast3(서울). 추측하지 말고 이 명령으로 다시 확인할 것.
  * - 분석 도구·외부 임베드 없음: analytics / gtag / iframe grep 0건
+ * - members/{uid} 필드: email, name, role (2026-08-23 Firebase 콘솔에서 확인).
+ *   규칙이 본인 문서만 열어주고 firebase-tools 에는 문서를 읽는 명령이 없어서
+ *   코드로는 확인할 수 없다 — 필드를 바꾸면 제1조도 함께 고칠 것.
  *
  * **CHICODE 와 달라진 곳**
  *
@@ -63,10 +66,12 @@ export default function PrivacyPolicy() {
           <li>Google 계정 고유 식별자(UID)</li>
         </ul>
         <p>
-          등록된 교사인지 확인하기 위해 별도의 교사 명단을 두며, 서비스는 그 명단에 본인
-          문서가 <strong>있는지 여부만</strong> 확인합니다. 이 명단은 본인 계정으로만 조회할
-          수 있고 전체 목록 조회는 서버에서 차단되어 있어, 학교 교사 전원의 정보가 한 번에
-          노출되지 않습니다.
+          등록된 교사인지 확인하기 위해 별도의 교사 명단을 두며, 여기에는{' '}
+          <strong>이메일 주소, 이름, 역할</strong>이 저장됩니다. 로그인할 때 서비스가 확인하는
+          것은 이 명단에 본인 문서가 <strong>있는지 여부</strong>입니다. 이 명단은 본인
+          계정으로만 조회할 수 있고 전체 목록 조회는 서버에서 차단되어 있어, 학교 교사 전원의
+          이메일이 한 번에 노출되지 않습니다. 명단에 넣고 빼는 것은 운영자만 할 수 있으며
+          자동 가입은 없습니다.
         </p>
         <p>
           교사가 과목·수업자료·수업 내용·발표자료를 만들거나 고치면 그 교사의{' '}
@@ -141,8 +146,10 @@ export default function PrivacyPolicy() {
 
       <PolicyArticle num="제4조" title="보유 및 삭제">
         <p>
-          <strong>교사 계정 정보</strong> — 교사 등록이 유지되는 동안 보유하며, 운영자가
-          등록을 해제하면 그 즉시 삭제합니다. 별도의 정액 보유기간을 두지 않습니다.
+          <strong>교사 계정 정보</strong> — 교사 등록이 유지되는 동안 보유합니다. 별도의 정액
+          보유기간을 두지 않으며, 운영자가 교사 명단에서 등록을 해제하면 거기 저장된 이메일
+          주소·이름도 함께 사라집니다. Google 로그인 자체의 계정 정보는 Firebase
+          Authentication 에 별도로 남아 있으며, 운영자가 해당 계정을 삭제할 때 지워집니다.
         </p>
         <p>
           <strong>수업기록(학번·이름·참여 기록)</strong> — 자동으로 삭제되는 기능은 없습니다.
