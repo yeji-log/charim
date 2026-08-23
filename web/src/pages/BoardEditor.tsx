@@ -28,7 +28,15 @@ const primary =
 const field =
   'rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text outline-none focus:border-secondary'
 
-const STATUSES: Season['status'][] = ['진행중', '준비중', '완료']
+// 준비 → 진행 → 완료, 실제 흐름 순서로 둔다.
+const STATUSES: Season['status'][] = ['준비중', '진행중', '완료']
+
+/** 목록에서 지금 선택된 상태만 색으로 강조한다 — Roadmap.tsx 배지와 같은 배색. */
+const STATUS_STYLE: Record<Season['status'], string> = {
+  진행중: 'bg-success/15 text-success',
+  준비중: 'bg-warning/15 text-warning',
+  완료: 'bg-primary-tint text-primary-dark',
+}
 
 /**
  * 교사용 수업내용 보드.
@@ -52,6 +60,8 @@ export default function BoardEditor({
   const [openSeason, setOpenSeason] = useState<Season | null>(null)
   /** 공개 스위치를 저장하는 중인 활동 id. 연타로 요청이 겹치지 않게 잠근다. */
   const [publishBusy, setPublishBusy] = useState<string | null>(null)
+  /** 상태 배지를 저장하는 중인 시즌 id. 위와 같은 이유로 잠근다. */
+  const [statusBusy, setStatusBusy] = useState<string | null>(null)
 
   const reload = useCallback(async () => {
     const [loadedSeasons, loadedActivities] = await Promise.all([
@@ -128,6 +138,31 @@ export default function BoardEditor({
     }
   }
 
+  /**
+   * 목록에서 바로 상태(준비중/진행중/완료)를 바꾼다.
+   *
+   * handleTogglePublished 와 같은 이유다 — "고치기" 를 열고 상태 버튼을 누르고
+   * 저장까지 세 번 누르게 하지 않는다. 화면을 먼저 바꾸고 저장하며, 실패하면
+   * 되돌린다.
+   */
+  async function handleSeasonStatus(season: Season, status: Season['status']) {
+    if (status === season.status) return
+    const previous = season.status
+    const apply = (value: Season['status']) =>
+      setSeasons((prev) => prev?.map((s) => (s.id === season.id ? { ...s, status: value } : s)) ?? prev)
+
+    setStatusBusy(season.id)
+    apply(status)
+    try {
+      await updateSeason(season.id, { status })
+    } catch (caught) {
+      console.error(`${seasonNoun} 상태 변경 실패`, caught)
+      apply(previous)
+    } finally {
+      setStatusBusy(null)
+    }
+  }
+
   if (!seasons) return <p className="text-sm text-muted">불러오는 중…</p>
 
   return (
@@ -154,12 +189,33 @@ export default function BoardEditor({
               >
                 <span className="text-lg">{season.emoji}</span>
                 <span className="font-bold text-text">{season.title}</span>
-                <span className="rounded-md bg-primary-tint px-2 py-0.5 text-xs font-semibold text-primary-dark">
-                  {season.status}
-                </span>
-                <button onClick={() => setOpenSeason(season)} className={ghost + ' ml-auto'}>
-                  고치기
-                </button>
+
+                <div className="ml-auto flex flex-wrap items-center gap-2">
+                  {/* 배지가 아니라 버튼 세 개다 — "고치기" 를 열지 않고 목록에서
+                      바로 상태를 바꾼다(handleSeasonStatus). */}
+                  <div className="flex gap-1 rounded-lg border border-line p-0.5">
+                    {STATUSES.map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => handleSeasonStatus(season, status)}
+                        disabled={statusBusy === season.id}
+                        aria-pressed={season.status === status}
+                        className={[
+                          'rounded-md px-2 py-1 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+                          season.status === status
+                            ? STATUS_STYLE[status]
+                            : 'text-muted hover:bg-bg hover:text-text',
+                        ].join(' ')}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setOpenSeason(season)} className={ghost}>
+                    고치기
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
