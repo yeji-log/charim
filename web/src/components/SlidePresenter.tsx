@@ -282,16 +282,13 @@ export default function SlidePresenter({
 
         {!penActive && (
           <div className="flex flex-col gap-1.5">
-            {/* "안 보입니다"만 적으면 안전하다는 뜻으로 읽힌다. 화면에 안 뜨는
-                것은 맞지만 slides 문서는 firestore.rules 에서 공개 읽기라 대본도
-                개발자도구로는 조회된다(학생이 로그인하지 않으므로 규칙으로 가를
-                방법이 없다). 그 규칙 주석에 "대본에 개인정보를 적지 않도록
-                화면에서 안내한다"고 적어둔 것이 이 문구다. */}
+            {/* 한때 여기에 "개인정보는 적지 마세요"를 붙여뒀었다. slides 문서가
+                공개 읽기라 화면에만 안 뜰 뿐 개발자도구로는 조회됐기 때문이다.
+                지금은 그 문서의 읽기가 isMember() 로 좁혀져 규칙이 실제로 막으므로
+                경고를 뺐다 — 막아놓고도 겁을 주면 교사가 대본을 안 쓴다.
+                **slides 문서 읽기를 다시 공개로 열면 이 경고를 되살릴 것.** */}
             <label className="text-sm font-semibold text-white/70">
-              대본{' '}
-              <span className="font-normal text-white/40">
-                (학생 화면엔 안 보입니다 · 개인정보는 적지 마세요)
-              </span>
+              대본 <span className="font-normal text-white/40">(학생 화면엔 안 보입니다)</span>
             </label>
             <textarea
               value={noteDraft}
