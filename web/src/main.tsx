@@ -16,6 +16,7 @@ import ActivityDetail from './pages/ActivityDetail'
 import Club, { ClubHome } from './pages/Club'
 import Schedule from './pages/Schedule'
 import Teacher from './pages/Teacher'
+import TeacherCourseEdit from './pages/TeacherCourseEdit'
 import NotFound from './pages/NotFound'
 
 createRoot(document.getElementById('root')!).render(
@@ -52,6 +53,9 @@ createRoot(document.getElementById('root')!).render(
 
             <Route path="schedule" element={<Schedule />} />
             <Route path="teacher" element={<Teacher />} />
+            {/* 과목 편집은 모달이 아니라 주소를 가진 화면이다 — 모바일에서
+                뒤로 가기로 나갈 수 있고, 모달이 겹치지 않는다. */}
+            <Route path="teacher/course/:courseId" element={<TeacherCourseEdit />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

@@ -15,6 +15,23 @@ import {
 } from '../lib/teacherPages'
 
 export default function Teacher() {
+  return (
+    <RequireTeacher>
+      <TeacherDashboard />
+    </RequireTeacher>
+  )
+}
+
+/**
+ * 교사 인증 게이트.
+ *
+ * 교사 화면이 여럿(교사 페이지, 과목 편집)이라 게이트를 컴포넌트로 뺐다.
+ * 화면마다 4단계 분기를 복제하면 한쪽만 고치는 실수가 난다.
+ *
+ * 여기서 하는 확인은 화면을 그리기 위한 것이지 보안 장치가 아니다. 실제 차단은
+ * firestore.rules 가 한다.
+ */
+export function RequireTeacher({ children }: { children: ReactNode }) {
   const { state, error, signIn } = useAuth()
 
   if (!isFirebaseConfigured) {
@@ -66,7 +83,7 @@ export default function Teacher() {
 
   if (state === 'not-allowed') return <NotAllowed />
 
-  return <TeacherDashboard />
+  return <>{children}</>
 }
 
 /**

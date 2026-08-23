@@ -36,6 +36,7 @@ web/src/pages/TeacherPublicPage.tsx  /t/{슬러그}
 web/src/lib/lessons.ts       시즌 + 활동 (courseId 유무로 과목/동아리)
 web/src/lib/lessonScope.ts   화면 하나를 두 맥락에 마운트하는 스코프 훅 ★
 web/src/pages/BoardEditor.tsx  교사용 보드 (시즌·활동·항목 편집)
+web/src/pages/TeacherCourseEdit.tsx  과목 편집 — /teacher/course/{id}
 web/src/pages/ClassRecords.tsx  수업기록 화면
 web/src/pages/Schedule.tsx 일정 (시간표 + 기록 탭)
 web/src/pages/Teacher.tsx  로그인 / 미등록(uid 표시) / 대시보드
