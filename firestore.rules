@@ -145,6 +145,19 @@ service cloud.firestore {
       match /activities/{activityId} {
         allow read: if true;
         allow write: if isMember();
+
+        // 항목별 첨부파일(attachments.ts). 규칙은 하위 컬렉션으로 상속되지
+        // 않으므로 chunks 까지 적는다 — 빠뜨리면 아무나 남의 저장 용량을
+        // 채울 수 있다. 학생이 내려받아야 하므로 읽기는 공개다.
+        match /attachments/{sectionId} {
+          allow read: if true;
+          allow write: if isMember();
+
+          match /chunks/{chunkIndex} {
+            allow read: if true;
+            allow write: if isMember();
+          }
+        }
       }
 
       // 발표자료. 문서 본문(대본/notes)과 파일(files 서브컬렉션)의 읽기 권한을

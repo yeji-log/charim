@@ -3,7 +3,9 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import Modal from '../components/Modal'
 import SlideUploader from '../components/SlideUploader'
+import { SectionAttachmentEditor } from '../components/SectionAttachment'
 import ToggleSwitch from '../components/ToggleSwitch'
+import { extractYoutubeId } from '../lib/youtube'
 import {
   addActivity,
   addSeason,
@@ -595,6 +597,47 @@ function ActivityEditor({
   )
 }
 
+/**
+ * 유튜브 주소 칸.
+ *
+ * 저장은 막지 않는다 — 교사가 잘못 붙여넣었을 수도 있고, 유튜브가 새 주소
+ * 형태를 내놓았을 수도 있다. 대신 못 알아보는 주소면 **그 자리에서** 알려준다.
+ * 학생 화면은 못 알아보는 주소를 조용히 감추므로(ActivityDetail), 여기서
+ * 경고하지 않으면 교사는 왜 영상이 안 나오는지 알 길이 없다.
+ */
+function YoutubeField({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (value: string) => void
+}) {
+  const bad = value.trim().length > 0 && !extractYoutubeId(value)
+
+  return (
+    <label className="flex flex-col gap-1.5">
+      <span className="text-xs font-semibold text-text">유튜브 영상</span>
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="https://youtu.be/..."
+        className={field}
+      />
+      {bad ? (
+        <p className="text-xs text-error">
+          유튜브 주소를 알아보지 못했습니다. 이대로 저장하면 학생 화면에 영상이 뜨지
+          않습니다.
+        </p>
+      ) : (
+        <p className="text-xs text-muted">
+          비워두면 안 보입니다. 영상은 유튜브에서 재생되며, 학생 기기가 유튜브에 직접
+          접속합니다.
+        </p>
+      )}
+    </label>
+  )
+}
+
 function SectionEditor({
   section,
   index,
@@ -716,6 +759,23 @@ function SectionEditor({
             />
             코드로 표시 (고정폭 글꼴 + 복사 버튼)
           </label>
+        </div>
+      )}
+
+      {/* 첨부와 영상은 글·체크리스트 어느 쪽에나 붙을 수 있다. 수업자료
+          자리(kind: 'slides')만 뺀다 — 거기는 발표자료 업로더가 이미 있다. */}
+      {section.kind !== 'slides' && (
+        <div className="mt-3 flex flex-col gap-3 border-t border-line pt-3">
+          <SectionAttachmentEditor
+            activityId={activityId}
+            sectionId={section.id}
+            hasAttachment={!!section.hasAttachment}
+            onChange={(has) => onChange({ hasAttachment: has })}
+          />
+          <YoutubeField
+            value={section.videoUrl ?? ''}
+            onChange={(videoUrl) => onChange({ videoUrl })}
+          />
         </div>
       )}
     </div>

@@ -39,6 +39,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 
+import { deleteAttachmentsOfActivity } from './attachments'
 import { db } from './firebase'
 import { deletePresentation } from './presentation'
 import { deleteSlideSet } from './slides'
@@ -63,6 +64,16 @@ export interface Section {
   kind?: 'checklist' | 'slides'
   /** kind === 'checklist' 일 때만 쓴다. */
   items?: ChecklistItem[]
+  /**
+   * 이 항목에 첨부파일이 붙어 있는지(attachments.ts).
+   *
+   * 파일 본문은 activities/{id}/attachments/{sectionId} 에 따로 있는데, 그
+   * 존재 여부를 알자고 항목마다 문서를 하나씩 읽으면 수업 하나 여는 데
+   * 읽기가 항목 수만큼 는다. 활동 문서에 이미 실려 오는 이 깃발로 가른다.
+   */
+  hasAttachment?: boolean
+  /** 유튜브 영상 주소(youtube.ts). 파일이 아니라 주소만 저장한다. */
+  videoUrl?: string
 }
 
 /**
@@ -319,6 +330,7 @@ export async function deleteActivity(id: string): Promise<void> {
   // 딸린 것부터 지운다. 활동 문서를 먼저 지우면 실패했을 때 그 id 를 다시
   // 찾을 방법이 없어 파일이 영영 남는다.
   await deleteSlideSet(id)
+  await deleteAttachmentsOfActivity(id)
   await deletePresentation(id)
   await deleteDoc(activityRef(id))
 }

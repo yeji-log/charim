@@ -90,6 +90,19 @@ export async function saveChunkedFile(
   return meta
 }
 
+/**
+ * 메타데이터만 읽는다 — 조각은 건드리지 않는다.
+ *
+ * "파일이 붙어 있나, 이름이 뭔가"만 알면 되는 화면이 쓴다. 20MB 짜리를
+ * 통째로 내려받아 놓고 파일명만 쓰는 일이 없게 한다.
+ */
+export async function getChunkedFileMeta(
+  fileDoc: DocumentReference,
+): Promise<ChunkedFileMeta | null> {
+  const snapshot = await getDoc(fileDoc)
+  return snapshot.exists() ? (snapshot.data() as ChunkedFileMeta) : null
+}
+
 /** 조각을 순서대로 읽어 하나의 Blob 으로 되돌린다. */
 export async function loadChunkedFile(fileDoc: DocumentReference): Promise<Blob | null> {
   const metaSnapshot = await getDoc(fileDoc)

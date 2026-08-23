@@ -14,7 +14,8 @@ export const TERMS_OF_SERVICE_EFFECTIVE_DATE = '2026. 8. 23.'
  * 지어낸 값이 아니라 코드에서 가져온 것이다.
  *
  * - 파일 크기 상한·허용 확장자: `lib/chunkedFile.ts` 의 MAX_FILE_SIZE,
- *   `lib/materials.ts` 의 ALLOWED_EXTENSIONS
+ *   `lib/materials.ts` 와 `lib/attachments.ts` 의 ALLOWED_EXTENSIONS,
+ *   `lib/slides.ts` 의 MAX_SLIDE_FILE_SIZE
  * - 저장 용량 한도: Firebase 무료(Spark) 플랜 1GiB. base64 로 저장하므로 원본보다
  *   약 37% 커진다는 점까지 감안해서 썼다
  * - 백업 없음: `firebase firestore:databases:get` 에서 PITR 이 DISABLED 인 것을
@@ -49,9 +50,9 @@ export default function TermsOfService() {
             만들고 고칠 수 있는 이용자
           </li>
           <li>
-            <strong>콘텐츠</strong> — 교사가 서비스에 올리는 수업자료 파일과 발표자료
-            (PPT·PDF), 교사가 작성하는 수업목차·수업 내용·발표자 노트, 교사가 등록하는
-            외부 링크
+            <strong>콘텐츠</strong> — 교사가 서비스에 올리는 수업자료 파일, 발표자료
+            (PPT·PDF), 수업 내용 항목의 첨부파일, 교사가 작성하는 수업목차·수업 내용·
+            발표자 노트, 교사가 등록하는 외부 링크와 유튜브 영상 주소
           </li>
         </ol>
       </PolicyArticle>
@@ -76,7 +77,11 @@ export default function TermsOfService() {
                 보입니다
               </li>
               <li>수업자료 열람 및 내려받기 (과목별 핀번호 입력 후 열람)</li>
-              <li>수업목차·수업 내용 열람</li>
+              <li>
+                수업목차·수업 내용 열람 — 항목마다 첨부파일과 유튜브 영상이 함께 붙을 수
+                있습니다. 영상은 유튜브에서 재생되며, 그때 학생 기기가 유튜브에 직접
+                접속합니다(개인정보처리방침 제5조)
+              </li>
               <li>
                 발표 화면 — 교사가 넘기는 대로 학생 화면이 함께 따라갑니다. 슬라이드를 넘길
                 수 있는 것은 교사뿐입니다
@@ -167,11 +172,20 @@ export default function TermsOfService() {
         </p>
         <ul>
           <li>
-            <strong>파일 하나당 최대 10MB</strong>
+            <strong>수업자료(과목의 "자료" 탭)</strong> — 파일 하나당 최대 10MB. 허용 형식은
+            pdf, png, jpg, jpeg, gif, webp, txt, md, csv, hwp, hwpx, doc, docx, ppt, pptx,
+            xls, xlsx, zip
           </li>
           <li>
-            허용 형식 — pdf, png, jpg, jpeg, gif, webp, txt, md, csv, hwp, hwpx, doc, docx,
-            ppt, pptx, xls, xlsx, zip
+            <strong>수업 내용 항목의 첨부파일</strong> — 파일 하나당 최대 20MB, 동영상(mp4)은
+            50MB. 허용 형식은 이미지·mp4·pdf·hwp·hwpx·doc·docx·ppt·pptx·xls·xlsx·csv·txt
+          </li>
+          <li>
+            <strong>발표자료</strong> — PPT·PDF 각각 최대 25MB
+          </li>
+          <li>
+            동영상은 재생 전에 전체를 내려받는 방식이라 긴 영상에는 맞지 않습니다. 한 차시
+            분량이라면 유튜브에 올리고 주소를 등록해 주세요
           </li>
           <li>
             전체 저장 용량에 한도가 있습니다. 저장 과정에서 파일이 원본보다 약 37% 커지므로,

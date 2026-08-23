@@ -3,7 +3,9 @@ import { Link, useParams } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
 import SlideSection from '../components/SlideSection'
+import SectionAttachment from '../components/SectionAttachment'
 import { useLessonScope } from '../lib/lessonScope'
+import { extractYoutubeId, youtubeEmbedUrl } from '../lib/youtube'
 import { getActivity, getSeason, type Activity, type Section } from '../lib/lessons'
 
 /** 수업 내용 상세. 항목 배열을 순서대로 그린다. */
@@ -123,6 +125,8 @@ export default function ActivityDetail() {
 }
 
 function SectionView({ section, activityId }: { section: Section; activityId: string }) {
+  const videoId = section.videoUrl ? extractYoutubeId(section.videoUrl) : null
+
   // 수업자료 항목은 제목을 스스로 그린다 — 제목과 발표 버튼이 한 줄에
   // 있어야 해서, 제목을 여기서 그리면 버튼이 그 아래로 밀린다.
   if (section.kind === 'slides') {
@@ -137,13 +141,32 @@ function SectionView({ section, activityId }: { section: Section; activityId: st
     <section className="rounded-2xl border border-line bg-surface p-6">
       {section.title && <h2 className="text-lg font-bold text-text">{section.title}</h2>}
 
-      <div className="mt-3">
+      <div className="mt-3 flex flex-col gap-4">
         {section.kind === 'checklist' ? (
           <ChecklistView items={section.items ?? []} />
         ) : section.isCode ? (
           <CodeBlock content={section.content} />
         ) : (
           <Paragraph content={section.content} />
+        )}
+
+        {/* 교사가 못 알아볼 주소를 저장해뒀을 수 있다. 그때는 조용히 감춘다 —
+            깨진 iframe 을 학생에게 보이는 것보다 낫고, 교사 화면에서는 저장할
+            때 경고를 띄운다(BoardEditor 의 YoutubeField). */}
+        {videoId && (
+          <div className="aspect-video w-full max-w-2xl overflow-hidden rounded-xl border border-line">
+            <iframe
+              src={youtubeEmbedUrl(videoId)}
+              title={section.title || '유튜브 영상'}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              className="h-full w-full"
+            />
+          </div>
+        )}
+
+        {section.hasAttachment && (
+          <SectionAttachment activityId={activityId} sectionId={section.id} />
         )}
       </div>
     </section>
