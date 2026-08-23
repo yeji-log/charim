@@ -58,6 +58,7 @@ export default function PdfViewer({
   onPageChange,
   onPageCountChange,
   hideControls,
+  fill,
 }: {
   file: Blob
   /** 주면 "제어되는" 뷰어가 된다 — 발표 모드에서 교사 조작이나 실시간으로
@@ -68,6 +69,8 @@ export default function PdfViewer({
   onPageChange?: (page: number) => void
   onPageCountChange?: (pageCount: number) => void
   hideControls?: boolean
+  /** 컨테이너를 꽉 채운다 — 폭뿐 아니라 높이에도 맞춘다(발표 화면). */
+  fill?: boolean
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -196,8 +199,20 @@ export default function PdfViewer({
         if (generation !== generationRef.current) return
 
         const base = target.getViewport({ scale: 1 })
-        const available = Math.max(container.clientWidth - 32, 100)
-        const scale = Math.max(available / base.width, 0.1)
+
+        // 평소에는 폭에만 맞춘다(세로로 길면 스크롤해서 본다). 발표 화면은
+        // 스크롤할 수 없으므로 높이에도 맞춰야 한다 — 폭에만 맞추면 16:9
+        // 슬라이드가 화면 아래로 넘쳐 잘리고, 그걸 피하려고 폭을 줄여두면
+        // 이번엔 화면이 텅 빈 채 슬라이드만 작게 남는다.
+        const padding = fill ? 8 : 32
+        const availableWidth = Math.max(container.clientWidth - padding, 100)
+        const widthScale = availableWidth / base.width
+        const scale = fill
+          ? Math.max(
+              Math.min(widthScale, Math.max(container.clientHeight - padding, 100) / base.height),
+              0.1,
+            )
+          : Math.max(widthScale, 0.1)
         const ratio = Math.min(window.devicePixelRatio || 1, 2)
 
         // **화면에 보이는 크기와 그리는 해상도를 반드시 분리한다.** 예전엔
@@ -239,7 +254,7 @@ export default function PdfViewer({
       })
 
     renderChainRef.current = chained
-  }, [page])
+  }, [page, fill])
 
   useEffect(() => {
     if (loading || error) return
@@ -264,7 +279,13 @@ export default function PdfViewer({
   }
 
   return (
-    <div ref={containerRef} className="flex w-full flex-col items-center gap-3">
+    <div
+      ref={containerRef}
+      className={[
+        'flex w-full flex-col items-center gap-3',
+        fill ? 'h-full justify-center' : '',
+      ].join(' ')}
+    >
       {loading && <p className="text-sm text-muted">여는 중…</p>}
 
       <canvas ref={canvasRef} className="max-w-full rounded-lg" />

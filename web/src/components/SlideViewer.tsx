@@ -26,6 +26,7 @@ export default function SlideViewer({
   onPageChange,
   onPageCountChange,
   hideControls,
+  fill,
 }: {
   pptxFile: Blob | null
   pdfFile: Blob | null
@@ -35,6 +36,8 @@ export default function SlideViewer({
   onPageChange?: (page: number) => void
   onPageCountChange?: (count: number) => void
   hideControls?: boolean
+  /** 컨테이너를 꽉 채운다(발표 화면). */
+  fill?: boolean
 }) {
   /** pptx-preview 가 실제로 그리는 대상. 로딩 중엔 hidden 이라 폭이 0이 된다. */
   const containerRef = useRef<HTMLDivElement>(null)
@@ -63,7 +66,14 @@ export default function SlideViewer({
       try {
         const { init } = await import('pptx-preview')
         const buffer = await pptxFile!.arrayBuffer()
-        const width = sizing?.clientWidth || container!.clientWidth || 960
+
+        // pptx-preview 는 init 시점의 크기로 고정해서 그린다. 발표 화면에서는
+        // 폭만 맞추면 16:9 슬라이드가 세로로 넘치므로, 가로·세로 중 먼저
+        // 닿는 쪽에 맞춰 최대 크기를 계산한다.
+        const boxWidth = sizing?.clientWidth || container!.clientWidth || 960
+        const boxHeight = sizing?.clientHeight || 0
+        const width =
+          fill && boxHeight > 0 ? Math.floor(Math.min(boxWidth, (boxHeight * 16) / 9)) : boxWidth
 
         const viewer = init(container!, { width, height: (width * 9) / 16, mode: 'slide' })
         viewerRef.current = viewer
@@ -123,6 +133,7 @@ export default function SlideViewer({
         onPageChange={onPageChange}
         onPageCountChange={onPageCountChange}
         hideControls={hideControls}
+        fill={fill}
       />
     )
   }
@@ -136,7 +147,13 @@ export default function SlideViewer({
   }
 
   return (
-    <div ref={sizingRef} className="flex w-full flex-col items-center gap-3">
+    <div
+      ref={sizingRef}
+      className={[
+        'flex w-full flex-col items-center gap-3',
+        fill ? 'h-full justify-center' : '',
+      ].join(' ')}
+    >
       {state === 'loading' && <p className="text-sm text-muted">여는 중…</p>}
 
       <div ref={containerRef} className={state === 'pptx' ? 'max-w-full overflow-x-auto' : 'hidden'} />

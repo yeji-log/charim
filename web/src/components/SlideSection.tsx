@@ -129,11 +129,17 @@ function PresentationOverlay({
   slide: number
 }) {
   return (
-    <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-[#0f1720] p-4">
-      <div className="flex w-full max-w-6xl justify-center">
-        <SlideViewer pptxFile={pptxFile} pdfFile={pdfFile} page={slide} hideControls />
+    <div className="fixed inset-0 z-40 bg-[#0f1720]">
+      {/* 슬라이드가 화면 전체를 쓴다. 폭 상한(max-w-6xl)을 두지 않는다 —
+          교실 뒤에서도 보여야 하는 화면이라 크면 클수록 낫다. */}
+      <div className="absolute inset-0 p-1 sm:p-2">
+        <SlideViewer pptxFile={pptxFile} pdfFile={pdfFile} page={slide} hideControls fill />
       </div>
-      <p className="text-sm text-white/60">{slide} 쪽 · 선생님이 넘기면 따라갑니다</p>
+      {/* 안내 문구는 자리를 차지하지 않게 겹쳐 둔다. 흐름에 두면 그만큼
+          슬라이드가 작아진다. */}
+      <p className="pointer-events-none absolute inset-x-0 bottom-1 text-center text-xs text-white/35">
+        {slide} 쪽 · 선생님이 넘기면 따라갑니다
+      </p>
     </div>
   )
 }
