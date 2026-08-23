@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
 import Modal from '../components/Modal'
@@ -96,7 +97,13 @@ export default function Schedule() {
 }
 
 function ScheduleTabs() {
-  const [section, setSection] = useState<'grid' | 'records'>('grid')
+  // 어느 탭인지를 컴포넌트 상태가 아니라 주소에 둔다 — 홈의 "기록하기"가 기록
+  // 탭으로 바로 들어와야 하는데, 상태로만 두면 밖에서 지정할 방법이 없다.
+  // 뒤로 가기로 시간표에 다시 쌓이지 않도록 replace 로 바꾼다.
+  const [params, setParams] = useSearchParams()
+  const section: 'grid' | 'records' = params.get('tab') === 'records' ? 'records' : 'grid'
+  const setSection = (next: 'grid' | 'records') =>
+    setParams(next === 'records' ? { tab: 'records' } : {}, { replace: true })
 
   const tabClass = (active: boolean) =>
     [

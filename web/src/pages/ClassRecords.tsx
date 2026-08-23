@@ -20,19 +20,12 @@ import {
   reorderClasses,
   setAttendance,
   setClassMemo,
+  todayLocal,
   type ClassMeta,
   type DateRecord,
   type Student,
 } from '../lib/classRecords'
 import { listAllTeacherPages, type TeacherPage } from '../lib/teacherPages'
-
-/** 오늘 날짜를 로컬 기준 "2026-08-23" 로. toISOString() 은 UTC 라 밤에는 어제가 된다. */
-function todayLocal(): string {
-  const now = new Date()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  return `${now.getFullYear()}-${month}-${day}`
-}
 
 function formatDateShort(date: string): string {
   const [, month, day] = date.split('-')

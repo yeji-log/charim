@@ -387,8 +387,8 @@ function TeacherPageSettings() {
   )
 }
 
-/** 값을 그대로 보여주고 복사 버튼을 붙인다. */
-function CopyBox({ label, value }: { label: string; value: string }) {
+/** 값을 그대로 보여주고 복사 버튼을 붙인다. 홈(교사용)도 공개 주소에 이걸 쓴다. */
+export function CopyBox({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false)
 
   const copy = useCallback(async () => {

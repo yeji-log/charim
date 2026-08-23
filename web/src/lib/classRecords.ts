@@ -66,6 +66,14 @@ export interface DateRecord {
   records: Record<string, boolean>
 }
 
+/** 오늘 날짜를 로컬 기준 "2026-08-23" 로. toISOString() 은 UTC 라 밤에는 어제가 된다. */
+export function todayLocal(): string {
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${now.getFullYear()}-${month}-${day}`
+}
+
 export function isParticipating(dateRecord: DateRecord, studentId: string): boolean {
   return dateRecord.records[studentId] ?? true
 }
@@ -301,6 +309,19 @@ export async function listDates(uid: string, classId: string): Promise<DateRecor
       records: (data.records as Record<string, boolean>) ?? {},
     }
   })
+}
+
+/**
+ * 그 날짜에 기록을 남겼는지만 본다.
+ *
+ * 홈의 "오늘 기록 안 쓴 반"이 이걸 쓴다. listDates 로 대신할 수도 있지만
+ * 그러면 반 하나당 학기 내내 쌓인 날짜 문서를 전부 읽는다 — 홈은 교사가 하루에
+ * 여러 번 여는 화면이라 그 비용이 그대로 무료 한도로 간다. 문서 id 가 날짜
+ * 문자열이라 여기서는 읽기 한 번으로 끝난다.
+ */
+export async function hasDateRecord(uid: string, classId: string, date: string): Promise<boolean> {
+  const snapshot = await getDoc(dateRef(classId, uid, date))
+  return snapshot.exists()
 }
 
 /**
