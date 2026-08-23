@@ -28,6 +28,8 @@ import {
 } from 'firebase/firestore'
 
 import { db } from './firebase'
+import { deleteLessonsOf } from './lessons'
+import { deleteMaterialsOfCourse } from './materials'
 import { wsPath } from './workspace'
 
 export interface CourseMeta {
@@ -123,11 +125,27 @@ export async function reorderCourses(orderedIds: string[]): Promise<void> {
 }
 
 /**
- * 과목을 지운다. 그 과목의 자료는 호출부에서 먼저 지워야 한다 —
- * Firestore 는 하위 문서를 따라 지우지 않고, materials 는 과목의 하위
- * 컬렉션도 아니라(courseId 필드로 연결) 여기서 알아서 정리할 수 없다.
- * deleteCourseWithMaterials 를 쓸 것.
+ * 과목 문서만 지운다. 딸린 것은 정리하지 않는다 — 보통은 아래
+ * deleteCourseWithContents 를 쓸 것.
  */
 export async function deleteCourse(courseId: string): Promise<void> {
   await deleteDoc(courseRef(courseId))
+}
+
+/**
+ * 과목과 그 안의 것을 전부 지운다 — 자료 파일, 수업목차, 수업 내용,
+ * 그 수업들의 발표자료까지.
+ *
+ * **과목을 지우면서 수업 내용을 안 지우던 것이 새는 자리였다.** materials 도
+ * seasons/activities 도 과목의 하위 컬렉션이 아니라 courseId 필드로만
+ * 연결돼 있어서, 과목 문서를 지워도 Firestore 가 따라 지워주지 않는다. 남은
+ * 문서는 어느 화면에도 안 뜨는데 저장 용량은 계속 차지한다.
+ *
+ * 순서가 중요하다. 과목 문서를 먼저 지우면 화면에서 그 과목을 다시 열 수 없어
+ * 남은 것을 정리할 방법이 없어진다.
+ */
+export async function deleteCourseWithContents(courseId: string): Promise<void> {
+  await deleteMaterialsOfCourse(courseId)
+  await deleteLessonsOf({ courseId })
+  await deleteCourse(courseId)
 }

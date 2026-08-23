@@ -5,13 +5,12 @@ import { useAuth } from '../auth/AuthProvider'
 import ToggleSwitch from '../components/ToggleSwitch'
 import BoardEditor from './BoardEditor'
 import { RequireTeacher } from './Teacher'
-import { deleteCourse, getCourse, updateCourse, type CourseMeta } from '../lib/courses'
+import { deleteCourseWithContents, getCourse, updateCourse, type CourseMeta } from '../lib/courses'
 import {
   MAX_FILE_SIZE,
   MaterialValidationError,
   addMaterial,
   deleteMaterial,
-  deleteMaterialsOfCourse,
   formatDate,
   formatSize,
   listMaterials,
@@ -230,10 +229,9 @@ function BasicPanel({
 
     setBusy(true)
     try {
-      // 자료를 먼저 지운다. 과목 문서를 먼저 지우면 화면에서 그 과목을 다시
-      // 열 수 없어 남은 파일을 정리하기 어렵다.
-      await deleteMaterialsOfCourse(course.id)
-      await deleteCourse(course.id)
+      // 자료·수업목차·수업 내용·발표자료까지 한 번에. 순서와 이유는
+      // deleteCourseWithContents 주석에 있다.
+      await deleteCourseWithContents(course.id)
       onDeleted()
     } catch (caught) {
       console.error('과목 삭제 실패', caught)

@@ -36,9 +36,17 @@ service cloud.firestore {
       // list 를 막는 게 핵심이다. 문서 id 가 uid 라 그 자체는 개인정보가 아니지만
       // 안에 이메일이 들어 있고, 목록을 열면 학교 교사 전원의 이메일이 샌다.
       // 추가·삭제는 Firebase 콘솔에서만 한다 — 초대제라 자동 가입이 없다.
+      //
+      // 삭제만 본인에게 연다 — 화면의 "탈퇴"가 쓴다(lib/withdraw.ts). 자기
+      // 등록만 없애는 것이라 남에게 영향이 없고, 잘못 눌러도 콘솔에서 다시
+      // 넣을 수 있다. 추가·수정은 여전히 콘솔에서만 한다.
+      //
+      // **이 문서가 사라지면 그 사람의 isMember() 가 곧바로 거짓이 된다.**
+      // 그래서 탈퇴는 다른 것을 다 지운 뒤 이걸 마지막 직전에 지운다.
       match /members/{uid} {
         allow get: if request.auth != null && uid == request.auth.uid;
-        allow list, create, update, delete: if false;
+        allow delete: if request.auth != null && uid == request.auth.uid;
+        allow list, create, update: if false;
       }
 
       // 사이트·동아리 설정. 학생 화면이 읽어야 하므로 읽기는 공개다 —

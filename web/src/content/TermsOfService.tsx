@@ -224,7 +224,25 @@ export default function TermsOfService() {
         </ol>
       </PolicyArticle>
 
-      <PolicyArticle num="제12조" title="서비스 이용의 제한">
+      <PolicyArticle num="제12조" title="탈퇴">
+        <ol>
+          <li>
+            교사는 교사 페이지에서 언제든지 탈퇴할 수 있습니다. 탈퇴하면 교사 등록과 Google
+            로그인 계정, 그리고 <strong>본인이 만든 과목·수업자료·동아리·수업 내용·발표자료가
+            모두 지워집니다.</strong>
+          </li>
+          <li>
+            담당 교사가 여럿인 반은 탈퇴한 교사만 담당에서 빠지고 학생 명단은 남습니다.
+            탈퇴하는 교사가 마지막 담당인 반은 학생 명단까지 함께 지워집니다.
+          </li>
+          <li>
+            <strong>탈퇴는 되돌릴 수 없습니다.</strong> 제10조대로 백업을 두지 않으므로 지워진
+            자료는 복구되지 않습니다. 필요한 자료는 탈퇴 전에 따로 보관해 주세요.
+          </li>
+        </ol>
+      </PolicyArticle>
+
+      <PolicyArticle num="제13조" title="서비스 이용의 제한">
         <p>
           운영자는 이용자가 제6조 또는 제7조를 위반하는 경우 사전 통지 없이 서비스 이용을
           제한할 수 있습니다. 교사의 경우 등록된 교사 명단에서 계정을 제외하는 방식으로 이용을
@@ -232,7 +250,7 @@ export default function TermsOfService() {
         </p>
       </PolicyArticle>
 
-      <PolicyArticle num="제13조" title="준거법 및 관할">
+      <PolicyArticle num="제14조" title="준거법 및 관할">
         <p>
           이 약관과 관련한 분쟁에는 대한민국 법을 적용하며, 분쟁이 발생할 경우 민사소송법상의
           관할 법원에 제기합니다.

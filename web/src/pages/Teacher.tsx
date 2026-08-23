@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '../auth/AuthProvider'
@@ -13,6 +13,7 @@ import {
   saveTeacherPage,
   type TeacherPage,
 } from '../lib/teacherPages'
+import { WithdrawError, withdrawTeacher, type WithdrawStep } from '../lib/withdraw'
 
 export default function Teacher() {
   return (
@@ -142,7 +143,132 @@ function TeacherDashboard() {
       </header>
 
       <DashboardTabs />
+
+      <WithdrawSection />
     </div>
+  )
+}
+
+/**
+ * 탈퇴 — 교사 페이지 맨 아래 위험 구역.
+ *
+ * **로그아웃 옆에 두지 않는다.** 하는 일의 무게가 전혀 다른데 버튼이 나란히
+ * 있으면 잘못 누른다. 기본은 접어두고, 펼친 뒤 이메일을 직접 입력해야 버튼이
+ * 열린다 — 확인 창 한 번으로는 습관적으로 눌러 넘긴다.
+ *
+ * 마지막 남은 교사가 탈퇴하면 아무도 들어올 수 없게 된다. 앱이 그걸 미리
+ * 막지 못하는 건 firestore.rules 가 교사 목록 조회를 막아두었기 때문이다
+ * (그걸 열면 학교 교사 전원의 이메일이 샌다). 그래서 검사 대신 경고를 띄운다.
+ */
+function WithdrawSection() {
+  const { user } = useAuth()
+  const [open, setOpen] = useState(false)
+  const [typed, setTyped] = useState('')
+  const [step, setStep] = useState<WithdrawStep | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const email = user?.email ?? ''
+  const ready = typed.trim().toLowerCase() === email.toLowerCase() && email.length > 0
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    if (!user || !ready || busy) return
+    if (
+      !window.confirm(
+        '정말 탈퇴하시겠습니까?\n\n내가 만든 과목·수업자료·동아리·수업 내용이 모두 지워지고 되돌릴 수 없습니다.',
+      )
+    )
+      return
+
+    setBusy(true)
+    setError(null)
+    try {
+      await withdrawTeacher(user, setStep)
+      // 계정이 사라지면 onAuthStateChanged 가 로그아웃으로 넘긴다. 화면이
+      // 바뀌기 전에 남는 찰나를 위해 상태만 정리해 둔다.
+      setStep(null)
+    } catch (caught) {
+      const message =
+        caught instanceof WithdrawError
+          ? `${caught.message} 다시 누르면 멈춘 곳부터 이어서 지웁니다.`
+          : '탈퇴하지 못했습니다. 잠시 뒤 다시 시도해 주세요.'
+      setError(message)
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="mt-4 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+      <div className="flex flex-wrap items-center gap-3">
+        <div>
+          <h2 className="text-sm font-bold text-text">탈퇴</h2>
+          <p className="mt-0.5 text-sm text-muted">
+            계정과 내가 만든 수업을 모두 지웁니다.
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setOpen((prev) => !prev)
+            setTyped('')
+            setError(null)
+          }}
+          className="ml-auto rounded-lg border border-line px-3 py-2 text-sm font-semibold text-muted transition-colors hover:border-error hover:text-error"
+        >
+          {open ? '닫기' : '탈퇴하기'}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-5 flex flex-col gap-4 border-t border-line pt-5">
+          <div className="rounded-xl border border-error/40 bg-error/5 px-4 py-3 text-sm leading-relaxed text-text">
+            <p className="font-semibold">다음이 모두 지워집니다. 되돌릴 수 없습니다.</p>
+            <ul className="mt-2 list-disc pl-5 [&_li]:my-0.5">
+              <li>내 과목과 그 안의 수업자료·수업목차·수업 내용·발표자료</li>
+              <li>내 동아리와 그 안의 시즌·활동</li>
+              <li>내 시간표, 내가 남긴 참여 기록, 내 공개 주소</li>
+              <li>교사 등록과 Google 로그인 계정</li>
+            </ul>
+            <p className="mt-2">
+              담당 교사가 여럿인 반은 <strong className="font-semibold">나만 빠지고</strong>{' '}
+              명단은 남습니다. 내가 마지막 담당인 반은 학생 명단까지 함께 지워집니다.
+            </p>
+            <p className="mt-2 font-semibold text-error">
+              내가 학교의 마지막 교사라면 아무도 들어올 수 없게 됩니다. 동료 선생님이 남아
+              있는지 먼저 확인해 주세요.
+            </p>
+          </div>
+
+          <form onSubmit={submit} className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-semibold text-text">
+                확인을 위해 <span className="font-mono">{email}</span> 을(를) 입력해 주세요
+              </span>
+              <input
+                value={typed}
+                onChange={(event) => setTyped(event.target.value)}
+                disabled={busy}
+                autoComplete="off"
+                placeholder={email}
+                className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text outline-none focus:border-error sm:max-w-md"
+              />
+            </label>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="submit"
+                disabled={!ready || busy}
+                className="rounded-lg bg-error px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                탈퇴하기
+              </button>
+              {busy && step && <span className="text-sm text-muted">{step} 지우는 중…</span>}
+              {error && <span className="text-sm text-error">{error}</span>}
+            </div>
+          </form>
+        </div>
+      )}
+    </section>
   )
 }
 

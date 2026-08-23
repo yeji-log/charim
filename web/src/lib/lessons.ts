@@ -40,6 +40,8 @@ import {
 } from 'firebase/firestore'
 
 import { db } from './firebase'
+import { deletePresentation } from './presentation'
+import { deleteSlideSet } from './slides'
 import { wsPath } from './workspace'
 
 /**
@@ -306,7 +308,18 @@ export async function updateActivity(id: string, patch: Partial<ActivityInput>):
   await updateDoc(activityRef(id), { ...patch, updatedAt: Date.now() })
 }
 
+/**
+ * 수업 하나를 지운다 — **딸린 것까지 전부.**
+ *
+ * 예전에는 activities 문서만 지웠다. 그러면 발표자료(slides/{id} 아래 PPT·PDF
+ * 원본과 조각)와 발표 상태가 그대로 남는다. 발표자료는 한 개가 최대 25MB 라
+ * 무료 1GiB 한도가 조용히 깎이는데, 화면 어디에도 안 뜨니 남은 줄도 모른다.
+ */
 export async function deleteActivity(id: string): Promise<void> {
+  // 딸린 것부터 지운다. 활동 문서를 먼저 지우면 실패했을 때 그 id 를 다시
+  // 찾을 방법이 없어 파일이 영영 남는다.
+  await deleteSlideSet(id)
+  await deletePresentation(id)
   await deleteDoc(activityRef(id))
 }
 
@@ -354,17 +367,25 @@ export async function adoptLegacyLessons(clubId: string): Promise<number> {
   return seasons.length + activities.length
 }
 
-/** 동아리를 지우기 전에 그 안의 시즌·활동을 먼저 치운다. clubId 필드로만
- *  연결돼 있어 Firestore 가 따라 지워주지 않는다. */
-export async function deleteLessonsOfClub(clubId: string): Promise<void> {
-  const [seasons, activities] = await Promise.all([
-    listSeasons({ clubId }),
-    listActivities({ owner: { clubId } }),
-  ])
-  if (seasons.length === 0 && activities.length === 0) return
+/**
+ * 한 과목 또는 한 동아리의 시즌·활동을 전부 치운다.
+ *
+ * courseId / clubId 필드로만 연결돼 있어 Firestore 가 따라 지워주지 않는다.
+ * 과목이나 동아리를 지우기 전에 반드시 먼저 부른다.
+ *
+ * 활동은 batch 로 몰아 지우지 않고 하나씩 deleteActivity 를 부른다 — 그래야
+ * 발표자료와 발표 상태까지 함께 지워진다. 느리지만 지우다 만 파일을 남기는
+ * 것보다 낫고, 애초에 자주 하는 일이 아니다.
+ */
+export async function deleteLessonsOf(owner: LessonOwner): Promise<void> {
+  const [seasons, activities] = await Promise.all([listSeasons(owner), listActivities({ owner })])
 
-  const batch = writeBatch(db)
-  seasons.forEach((season) => batch.delete(seasonRef(season.id)))
-  activities.forEach((activity) => batch.delete(activityRef(activity.id)))
-  await batch.commit()
+  for (const activity of activities) {
+    await deleteActivity(activity.id)
+  }
+  if (seasons.length > 0) {
+    const batch = writeBatch(db)
+    seasons.forEach((season) => batch.delete(seasonRef(season.id)))
+    await batch.commit()
+  }
 }

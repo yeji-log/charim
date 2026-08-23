@@ -24,7 +24,7 @@
  *   workspaces/{wsId}/slides/{activityId}/files/pptx  PPT 원본 + chunks
  *   workspaces/{wsId}/slides/{activityId}/files/pdf   미리보기용 PDF + chunks
  */
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore'
 
 import { db } from './firebase'
 import {
@@ -127,4 +127,22 @@ export async function updateNote(
   while (notes.length < slideNumber) notes.push('')
   notes[slideNumber - 1] = text
   await saveNotes(activityId, notes)
+}
+
+/**
+ * 한 수업의 발표자료를 통째로 지운다 — PPT·PDF 원본과 조각, 발표자 노트까지.
+ *
+ * **이게 없어서 그동안 새고 있었다.** 활동을 지우면 activities 문서만 사라지고
+ * slides/{activityId} 아래 파일이 그대로 남았다. 발표자료는 한 개가 최대
+ * 25MB(저장소에서는 base64 로 약 34MB)라, 무료 1GiB 한도에서는 몇 번만
+ * 반복해도 눈에 띄게 깎인다. 화면 어디에도 안 뜨니 남은 줄도 모른다.
+ *
+ * deleteChunkedFile 이 조각까지 지운다. 없는 파일에 불러도 조용히 끝난다.
+ */
+export async function deleteSlideSet(activityId: string): Promise<void> {
+  await Promise.all([
+    deleteChunkedFile(pptxRef(activityId)),
+    deleteChunkedFile(pdfRef(activityId)),
+  ])
+  await deleteDoc(setDocRef(activityId))
 }

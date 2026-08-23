@@ -17,6 +17,7 @@
  */
 import {
   arrayUnion,
+  deleteDoc,
   deleteField,
   doc,
   onSnapshot,
@@ -152,4 +153,10 @@ export async function setCurrentSlide(activityId: string, slide: number): Promis
     { currentSlide: slide, updatedAt: Date.now() },
     { merge: true },
   )
+}
+
+/** 수업을 지울 때 그 발표 상태도 함께 지운다. 남겨두면 학생 화면이 없어진
+ *  수업을 구독한 채로 남는다. */
+export async function deletePresentation(activityId: string): Promise<void> {
+  await deleteDoc(presentationRef(activityId))
 }
