@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import ToggleSwitch from '../components/ToggleSwitch'
 import BoardEditor from './BoardEditor'
-import { createMyClub, getMyClub, updateClub, type ClubMeta } from '../lib/clubs'
+import { createMyClub, deleteClubWithContents, getMyClub, updateClub, type ClubMeta } from '../lib/clubs'
 import {
   adoptLegacyLessons,
   listActivities,
@@ -121,6 +121,32 @@ export default function ClubBoard() {
     } catch (caught) {
       console.error('동아리 설정 변경 실패', caught)
       setClub(club)
+    }
+  }
+
+  async function remove() {
+    if (!club) return
+    if (
+      !window.confirm(
+        `"${club.name}" 동아리와 그 안의 시즌·활동을 모두 지웁니다. 되돌릴 수 없습니다. 계속할까요?`,
+      )
+    )
+      return
+
+    setBusy(true)
+    try {
+      // 시즌·활동·발표자료까지 한 번에. 순서와 이유는 deleteClubWithContents 주석에 있다.
+      await deleteClubWithContents(club.id)
+      setClub(null)
+      setActivities([])
+      setName('')
+      setMission('')
+      setPin('')
+      setMessage(null)
+    } catch (caught) {
+      console.error('동아리 삭제 실패', caught)
+      setMessage('지우지 못했습니다.')
+      setBusy(false)
     }
   }
 
@@ -287,6 +313,16 @@ export default function ClubBoard() {
 
       <div className="mt-6 border-t border-line pt-5">
         <BoardEditor owner={{ clubId: club.id }} seasonNoun="시즌" activityNoun="활동" />
+      </div>
+
+      <div className="mt-6 border-t border-line pt-5">
+        <button
+          onClick={remove}
+          disabled={busy}
+          className="rounded-lg border border-line px-4 py-2 text-sm font-semibold text-muted transition-colors hover:border-error hover:text-error disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          이 동아리 지우기
+        </button>
       </div>
     </section>
   )

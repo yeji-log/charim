@@ -29,9 +29,8 @@ import {
   removeClassTeacher,
   deleteDate,
 } from './classRecords'
-import { deleteClub, getMyClub } from './clubs'
+import { deleteClubWithContents, getMyClub } from './clubs'
 import { deleteCourseWithContents, listCoursesByTeacher } from './courses'
-import { deleteLessonsOf } from './lessons'
 import { getMyTeacherPage } from './teacherPages'
 import { wsPath } from './workspace'
 
@@ -90,8 +89,7 @@ export async function withdrawTeacher(
   await run('동아리', async () => {
     const club = await getMyClub(uid)
     if (!club) return
-    await deleteLessonsOf({ clubId: club.id })
-    await deleteClub(club.id)
+    await deleteClubWithContents(club.id)
   })
 
   // 반은 함께 쓰는 자산이다. 동료가 남아 있으면 나만 빠지고 명단은 그대로

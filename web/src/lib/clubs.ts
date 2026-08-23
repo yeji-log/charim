@@ -22,6 +22,7 @@
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
 
 import { db } from './firebase'
+import { deleteLessonsOf } from './lessons'
 import { wsPath } from './workspace'
 
 export interface ClubMeta {
@@ -119,7 +120,21 @@ export async function updateClub(
  * 동아리 문서만 지운다. 그 동아리의 시즌·활동은 호출부에서 먼저 정리해야
  * 한다 — 하위 컬렉션이 아니라 clubId 필드로 연결되어 있어서 Firestore 가
  * 따라 지워주지 않는다(courses 의 deleteCourseWithMaterials 와 같은 사정).
+ * 보통은 아래 deleteClubWithContents 를 쓸 것.
  */
 export async function deleteClub(clubId: string): Promise<void> {
   await deleteDoc(clubRef(clubId))
+}
+
+/**
+ * 동아리와 그 안의 시즌·활동·발표자료까지 전부 지운다.
+ *
+ * courses.ts 의 deleteCourseWithContents 와 같은 이유다 — seasons/activities 가
+ * clubId 필드로만 연결돼 있어 동아리 문서를 지워도 Firestore 가 따라 지우지
+ * 않는다. 활동마다 발표자료까지 정리하는 건 deleteLessonsOf 안 deleteActivity 가
+ * 한다.
+ */
+export async function deleteClubWithContents(clubId: string): Promise<void> {
+  await deleteLessonsOf({ clubId })
+  await deleteClub(clubId)
 }
