@@ -1,7 +1,11 @@
+import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 
 import { useAuth } from './auth/AuthProvider'
 import Logo from './components/Logo'
+import Modal from './components/Modal'
+import PrivacyPolicy, { PRIVACY_POLICY_EFFECTIVE_DATE } from './content/PrivacyPolicy'
+import TermsOfService, { TERMS_OF_SERVICE_EFFECTIVE_DATE } from './content/TermsOfService'
 
 const TABS = [
   { to: '/', label: '홈', end: true },
@@ -24,8 +28,12 @@ const tabClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-muted hover:bg-primary-tint/60 hover:text-primary-dark',
   ].join(' ')
 
+/** 풋터에서 여는 정책 문서 팝업 — 어느 것도 안 열려 있으면 null. */
+type OpenPolicy = 'privacy' | 'terms' | null
+
 export default function App() {
   const { state: authState } = useAuth()
+  const [openPolicy, setOpenPolicy] = useState<OpenPolicy>(null)
 
   return (
     <div className="flex min-h-full flex-col">
@@ -74,14 +82,46 @@ export default function App() {
       <footer className="border-t border-line px-5 py-6">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
           <p>© 차림 CHARIM</p>
-          <Link to="/privacy" className="font-semibold underline-offset-2 hover:text-text hover:underline">
-            개인정보처리방침
-          </Link>
-          <Link to="/terms" className="underline-offset-2 hover:text-text hover:underline">
-            이용약관
-          </Link>
+          {/* 개인정보처리방침·이용약관은 오른쪽 끝에 붙여 저작권 표기와 분리한다. */}
+          <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
+            <button
+              type="button"
+              onClick={() => setOpenPolicy('privacy')}
+              className="font-semibold underline-offset-2 hover:text-text hover:underline"
+            >
+              개인정보처리방침
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenPolicy('terms')}
+              className="underline-offset-2 hover:text-text hover:underline"
+            >
+              이용약관
+            </button>
+          </div>
         </div>
       </footer>
+
+      {/* /privacy, /terms 주소는 그대로 남겨둔다 — 링크로 보내야 할 때를 위해서다.
+          풋터에서는 페이지 이동 없이 바로 훑어볼 수 있도록 팝업으로 띄운다. */}
+      {openPolicy && (
+        <Modal
+          title={openPolicy === 'privacy' ? '개인정보처리방침' : '이용약관'}
+          onClose={() => setOpenPolicy(null)}
+        >
+          <p className="mb-4 text-xs text-muted">
+            시행일 {openPolicy === 'privacy' ? PRIVACY_POLICY_EFFECTIVE_DATE : TERMS_OF_SERVICE_EFFECTIVE_DATE}
+          </p>
+          {openPolicy === 'privacy' ? <PrivacyPolicy /> : <TermsOfService />}
+          <Link
+            to={openPolicy === 'privacy' ? '/privacy' : '/terms'}
+            onClick={() => setOpenPolicy(null)}
+            className="mt-6 inline-block text-xs font-semibold text-primary hover:underline"
+          >
+            전용 주소로 보기
+          </Link>
+        </Modal>
+      )}
     </div>
   )
 }
