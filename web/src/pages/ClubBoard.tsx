@@ -11,6 +11,7 @@ import {
   listLegacyLessons,
   type Activity,
 } from '../lib/lessons'
+import { getMyTeacherPage } from '../lib/teacherPages'
 
 const ghost =
   'rounded-lg border border-line px-3 py-1.5 text-sm font-semibold text-muted transition-colors hover:border-secondary hover:text-text disabled:cursor-not-allowed disabled:opacity-50'
@@ -32,6 +33,8 @@ export default function ClubBoard() {
 
   const [club, setClub] = useState<ClubMeta | null>(null)
   const [loaded, setLoaded] = useState(false)
+  /** 공개 페이지에 표시 이름이 있는지. 없으면 동아리 목록에 이름표가 안 붙는다. */
+  const [hasDisplayName, setHasDisplayName] = useState(true)
   const [activities, setActivities] = useState<Activity[]>([])
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -52,10 +55,11 @@ export default function ClubBoard() {
     if (!uid) return
     let cancelled = false
 
-    getMyClub(uid)
-      .then(async (found) => {
+    Promise.all([getMyClub(uid), getMyTeacherPage(uid)])
+      .then(async ([found, page]) => {
         if (cancelled) return
         setLoaded(true)
+        setHasDisplayName(!!page?.displayName.trim())
         if (!found) return
         applyClub(found)
         const mine = await listActivities({ owner: { clubId: found.id } })
@@ -181,6 +185,18 @@ export default function ClubBoard() {
       <p className="mt-1.5 text-sm leading-relaxed text-muted">
         다른 선생님은 이 동아리를 고칠 수 없고, 동아리 목록에서도 보지 않습니다.
       </p>
+
+      {/* 동아리 목록의 이름표는 teacherPages 의 표시 이름에서 온다. 그게
+          없으면 학생 화면에 동아리 이름만 덩그러니 뜬다 — "코딩반"이 둘이면
+          자기 것을 고를 수 없다. 공개하기 전에 알려준다. */}
+      {!hasDisplayName && (
+        <div className="mt-4 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm leading-relaxed text-text">
+          아직 <strong className="font-semibold">내 수업 주소</strong>를 만들지 않으셨습니다.
+          그래서 학생이 보는 동아리 목록에 <strong className="font-semibold">선생님 이름이
+          안 붙습니다.</strong> 위의 "내 수업 주소" 탭에서 주소와 표시 이름을 먼저 정해
+          주세요.
+        </div>
+      )}
 
       <LegacyLessons clubId={club.id} />
 
