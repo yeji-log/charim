@@ -412,8 +412,9 @@ Firestore 가 따라 지워주지 않는 경우다.
 
 1. **활동을 지워도 발표자료가 남았다.** `activities` 문서만 지우고
    `slides/{activityId}` 아래 PPT·PDF 원본과 조각은 그대로였다. 하나가 최대
-   25MB(base64 로 약 34MB)라 무료 1GiB 한도가 조용히 깎인다. 이제
-   `deleteActivity` 가 `deleteSlideSet` + `deletePresentation` 까지 부른다.
+   40MB(base64 로 약 54MB, 2026-08-25 25MB→40MB 로 올림)라 무료 1GiB 한도가
+   조용히 깎인다. 이제 `deleteActivity` 가 `deleteSlideSet` + `deletePresentation`
+   까지 부른다.
 2. **과목을 지워도 그 안 시즌·활동이 남았다.** 자료(materials)만 지우고 있었다.
    `deleteCourseWithContents` 가 셋을 다 치운다.
 

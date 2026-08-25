@@ -41,9 +41,9 @@ export class SlideValidationError extends Error {}
 /**
  * PPT 는 이미지가 많아 수업자료(10MB)보다 크게 잡되, 무료 플랜 총량(1GiB)을
  * 한 수업이 잠식하지 않도록 여전히 제한한다. base64 로 약 1.34배 부푸는 것도
- * 감안한 값이다 — 25MB 원본이 저장소에서는 약 34MB 다.
+ * 감안한 값이다 — 40MB 원본이 저장소에서는 약 54MB 다.
  */
-export const MAX_SLIDE_FILE_SIZE = 25 * 1024 * 1024
+export const MAX_SLIDE_FILE_SIZE = 40 * 1024 * 1024
 
 const setDocRef = (activityId: string) => doc(db, ...wsPath('slides', activityId))
 const pptxRef = (activityId: string) => doc(db, ...wsPath('slides', activityId, 'files', 'pptx'))
@@ -134,7 +134,7 @@ export async function updateNote(
  *
  * **이게 없어서 그동안 새고 있었다.** 활동을 지우면 activities 문서만 사라지고
  * slides/{activityId} 아래 파일이 그대로 남았다. 발표자료는 한 개가 최대
- * 25MB(저장소에서는 base64 로 약 34MB)라, 무료 1GiB 한도에서는 몇 번만
+ * 40MB(저장소에서는 base64 로 약 54MB)라, 무료 1GiB 한도에서는 몇 번만
  * 반복해도 눈에 띄게 깎인다. 화면 어디에도 안 뜨니 남은 줄도 모른다.
  *
  * deleteChunkedFile 이 조각까지 지운다. 없는 파일에 불러도 조용히 끝난다.
