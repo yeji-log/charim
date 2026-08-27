@@ -20,6 +20,7 @@ import {
   reorderClasses,
   setAttendance,
   setClassMemo,
+  setDateMemo,
   todayLocal,
   type ClassMeta,
   type DateRecord,
@@ -30,6 +31,17 @@ import { listAllTeacherPages, type TeacherPage } from '../lib/teacherPages'
 function formatDateShort(date: string): string {
   const [, month, day] = date.split('-')
   return month && day ? `${Number(month)}/${Number(day)}` : date
+}
+
+/**
+ * 표 헤더에 쓸 날짜 표시. 하루에 두 번 이상 추가한 기록은 문서 id 가
+ * "{date}-2" 처럼 접미사가 붙으므로(createDate 참고) "8/27 (2)" 처럼 몇 번째
+ * 기록인지 붙여 같은 날짜끼리 구분한다.
+ */
+function formatDateLabel(entry: DateRecord): string {
+  const base = formatDateShort(entry.date)
+  const suffix = entry.id.slice(entry.date.length) // "" 또는 "-2", "-3" …
+  return suffix ? `${base} (${suffix.slice(1)})` : base
 }
 
 const ghostButton =
@@ -312,6 +324,26 @@ function ClassPanel({
     [uid, meta.id],
   )
 
+  const handleMemoChange = useCallback(
+    async (dateId: string, memo: string) => {
+      const previous = dates.find((entry) => entry.id === dateId)?.memo ?? ''
+      // 낙관적으로 먼저 반영한다. 실패하면 되돌린다.
+      setDates((prev) =>
+        prev.map((entry) => (entry.id === dateId ? { ...entry, memo } : entry)),
+      )
+      try {
+        await setDateMemo(uid, meta.id, dateId, memo)
+      } catch (caught) {
+        console.error('날짜 메모 저장 실패', caught)
+        setDates((prev) =>
+          prev.map((entry) => (entry.id === dateId ? { ...entry, memo: previous } : entry)),
+        )
+        throw caught
+      }
+    },
+    [uid, meta.id, dates],
+  )
+
   if (loadError) {
     return (
       <p className="rounded-xl border border-line bg-surface px-4 py-3 text-sm text-error">
@@ -365,6 +397,7 @@ function ClassPanel({
         students={students}
         dates={dates}
         onToggle={handleToggle}
+        onMemoChange={handleMemoChange}
         onStudentDeleted={(studentId) =>
           setStudents(students.filter((entry) => entry.id !== studentId))
         }
@@ -548,10 +581,13 @@ function NewDatePanel({
           className={inputClass}
         />
       </label>
-      <button onClick={handleCreate} disabled={busy || already} className={primaryButton}>
-        {already ? '이미 있는 날짜' : busy ? '만드는 중…' : '이 날짜 추가'}
+      <button onClick={handleCreate} disabled={busy} className={primaryButton}>
+        {busy ? '만드는 중…' : '이 날짜 추가'}
       </button>
-      <p className="text-sm text-muted">추가하면 전원 참여로 시작합니다.</p>
+      <p className="text-sm text-muted">
+        추가하면 전원 참여로 시작합니다.
+        {already && ' 이미 있는 날짜지만, 하루에 두 번 만나는 반이면 또 추가해도 됩니다.'}
+      </p>
     </section>
   )
 }
@@ -571,6 +607,7 @@ function DateSummary({ students, dates }: { students: Student[]; dates: DateReco
           · 미참여 {absent.map((student) => student.name).join(', ')}
         </span>
       )}
+      {latest.memo && <span> · 메모: {latest.memo}</span>}
     </p>
   )
 }
@@ -581,6 +618,7 @@ function RecordTable({
   students,
   dates,
   onToggle,
+  onMemoChange,
   onStudentDeleted,
   onDateDeleted,
 }: {
@@ -589,9 +627,12 @@ function RecordTable({
   students: Student[]
   dates: DateRecord[]
   onToggle: (dateId: string, studentId: string, next: boolean) => void
+  onMemoChange: (dateId: string, memo: string) => Promise<void>
   onStudentDeleted: (studentId: string) => void
   onDateDeleted: (dateId: string) => void
 }) {
+  const [memoEditing, setMemoEditing] = useState<DateRecord | null>(null)
+
   if (students.length === 0) {
     return (
       <section className="rounded-2xl border border-dashed border-line p-10 text-center text-sm text-muted">
@@ -637,7 +678,18 @@ function RecordTable({
             {dates.map((entry) => (
               <th key={entry.id} className="border-b border-l border-line px-2 py-3 text-xs">
                 <div className="flex flex-col items-center gap-1">
-                  <span className="font-semibold text-text">{formatDateShort(entry.date)}</span>
+                  <span className="font-semibold text-text">{formatDateLabel(entry)}</span>
+                  <button
+                    onClick={() => setMemoEditing(entry)}
+                    title={entry.memo || '메모 추가'}
+                    aria-label={`${entry.date} 메모`}
+                    className={[
+                      'max-w-[72px] truncate text-[10px] font-normal',
+                      entry.memo ? 'text-primary-dark' : 'text-secondary',
+                    ].join(' ')}
+                  >
+                    {entry.memo ? entry.memo : '+ 메모'}
+                  </button>
                   <button
                     onClick={() => handleDeleteDate(entry.id)}
                     aria-label={`${entry.date} 기록 지우기`}
@@ -692,7 +744,69 @@ function RecordTable({
           ))}
         </tbody>
       </table>
+
+      {memoEditing && (
+        <DateMemoModal
+          dateRecord={memoEditing}
+          onClose={() => setMemoEditing(null)}
+          onSave={async (memo) => {
+            await onMemoChange(memoEditing.id, memo)
+            setMemoEditing(null)
+          }}
+        />
+      )}
     </div>
+  )
+}
+
+function DateMemoModal({
+  dateRecord,
+  onClose,
+  onSave,
+}: {
+  dateRecord: DateRecord
+  onClose: () => void
+  onSave: (memo: string) => Promise<void>
+}) {
+  const [memo, setMemo] = useState(dateRecord.memo ?? '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSave() {
+    setBusy(true)
+    setError(null)
+    try {
+      await onSave(memo)
+    } catch (caught) {
+      console.error('날짜 메모 저장 실패', caught)
+      setError('저장하지 못했습니다. 다시 시도해 주세요.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal title={`${dateRecord.date} 메모`} onClose={onClose}>
+      <div className="flex flex-col gap-3">
+        <textarea
+          value={memo}
+          onChange={(event) => setMemo(event.target.value)}
+          rows={4}
+          autoFocus
+          placeholder="이 날 수업에 대한 메모 (진도, 특이사항 등)"
+          className={inputClass}
+        />
+        {error && <p className="text-sm text-error">{error}</p>}
+        <div className="flex items-center gap-2">
+          <button onClick={handleSave} disabled={busy} className={primaryButton}>
+            {busy ? '저장 중…' : '저장'}
+          </button>
+          <button type="button" onClick={onClose} disabled={busy} className={ghostButton}>
+            취소
+          </button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 

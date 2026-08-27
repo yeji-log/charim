@@ -64,6 +64,8 @@ export interface DateRecord {
   date: string
   /** 학생 id -> 참여 여부. 키가 없으면 참여로 본다. */
   records: Record<string, boolean>
+  /** 그 날짜 수업에 대한 자유 메모 (특정 학생이 아니라 그날 전체에 대한 것). */
+  memo?: string
 }
 
 /** 오늘 날짜를 로컬 기준 "2026-08-23" 로. toISOString() 은 UTC 라 밤에는 어제가 된다. */
@@ -307,6 +309,7 @@ export async function listDates(uid: string, classId: string): Promise<DateRecor
       id: entry.id,
       date: data.date as string,
       records: (data.records as Record<string, boolean>) ?? {},
+      memo: (data.memo as string | undefined) ?? '',
     }
   })
 }
@@ -316,8 +319,10 @@ export async function listDates(uid: string, classId: string): Promise<DateRecor
  *
  * 홈의 "오늘 기록 안 쓴 반"이 이걸 쓴다. listDates 로 대신할 수도 있지만
  * 그러면 반 하나당 학기 내내 쌓인 날짜 문서를 전부 읽는다 — 홈은 교사가 하루에
- * 여러 번 여는 화면이라 그 비용이 그대로 무료 한도로 간다. 문서 id 가 날짜
- * 문자열이라 여기서는 읽기 한 번으로 끝난다.
+ * 여러 번 여는 화면이라 그 비용이 그대로 무료 한도로 간다. 문서 id 의 앞자리가
+ * 날짜 문자열이라(createDate 참고) 여기서는 읽기 한 번으로 끝난다 — 하루에
+ * 두 번째로 만든 기록(`{date}-2`)까지 확인하지는 않지만, "오늘 기록을 시작은
+ * 했는지"를 보는 용도라 첫 기록만 봐도 충분하다.
  */
 export async function hasDateRecord(uid: string, classId: string, date: string): Promise<boolean> {
   const snapshot = await getDoc(dateRef(classId, uid, date))
@@ -325,9 +330,15 @@ export async function hasDateRecord(uid: string, classId: string, date: string):
 }
 
 /**
- * 새 수업 날짜를 만든다. 이미 있으면 있는 그대로 돌려주고 새로 만들지 않는다 —
- * 같은 날짜를 두 번 눌러 기존 기록을 덮어쓰면 안 된다. 문서 id 를 날짜 문자열
- * ("2026-08-23")로 두어 이 확인이 조회 한 번으로 끝나고, 정렬도 자연스럽다.
+ * 새 수업 날짜를 만든다.
+ *
+ * 하루에 두 번 만나는 반도 있어서(오전·오후반, 보강 등) 같은 날짜를 여러 번
+ * 추가할 수 있어야 한다(사용자 결정) — 그래서 이미 있어도 기존 기록을 덮어쓰지
+ * 않고 새로 만든다. 문서 id 는 우선 날짜 문자열("2026-08-23")을 쓰고, 이미
+ * 있으면 "-2", "-3" 처럼 접미사를 붙인 새 id 를 찾는다. 접미사를 붙여도 사전식
+ * 정렬이 그대로 유지된다 — "2026-08-23" < "2026-08-23-2" < "2026-08-24".
+ * 하루에 여러 번 만드는 경우는 드물어서 문서를 몇 번 더 읽는 비용은 무시할
+ * 만하다.
  */
 export async function createDate(
   uid: string,
@@ -335,18 +346,34 @@ export async function createDate(
   date: string,
   studentIds: string[],
 ): Promise<DateRecord> {
-  const ref = dateRef(classId, uid, date)
-  const existing = await getDoc(ref)
-  if (existing.exists()) {
-    return { id: date, date, records: (existing.data().records as Record<string, boolean>) ?? {} }
-  }
   const records = Object.fromEntries(studentIds.map((id) => [id, true]))
-  await setDoc(ref, { date, records })
-  return { id: date, date, records }
+
+  let id = date
+  let suffix = 2
+  for (;;) {
+    const ref = dateRef(classId, uid, id)
+    const existing = await getDoc(ref)
+    if (!existing.exists()) {
+      await setDoc(ref, { date, records })
+      return { id, date, records, memo: '' }
+    }
+    id = `${date}-${suffix}`
+    suffix += 1
+  }
 }
 
 export async function deleteDate(uid: string, classId: string, dateId: string): Promise<void> {
   await deleteDoc(dateRef(classId, uid, dateId))
+}
+
+/** 그 날짜에 대한 메모를 저장한다. 특정 학생이 아니라 그날 수업 전체에 대한 것이다. */
+export async function setDateMemo(
+  uid: string,
+  classId: string,
+  dateId: string,
+  memo: string,
+): Promise<void> {
+  await updateDoc(dateRef(classId, uid, dateId), { memo: memo.trim() })
 }
 
 /**
