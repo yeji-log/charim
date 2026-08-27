@@ -676,15 +676,17 @@ function RecordTable({
             <th className={stickyHead + ' left-10 w-20 border-l'}>학번</th>
             <th className={stickyHead + ' left-[120px] w-28 border-l text-left'}>이름</th>
             {dates.map((entry) => (
-              <th key={entry.id} className="border-b border-l border-line px-2 py-3 text-xs">
+              <th
+                key={entry.id}
+                className="min-w-[92px] border-b border-l border-line px-2 py-3 text-xs align-top"
+              >
                 <div className="flex flex-col items-center gap-1">
                   <span className="font-semibold text-text">{formatDateLabel(entry)}</span>
                   <button
                     onClick={() => setMemoEditing(entry)}
-                    title={entry.memo || '메모 추가'}
                     aria-label={`${entry.date} 메모`}
                     className={[
-                      'max-w-[72px] truncate text-[10px] font-normal',
+                      'w-full whitespace-normal break-words text-[10px] font-normal leading-snug',
                       entry.memo ? 'text-primary-dark' : 'text-secondary',
                     ].join(' ')}
                   >
