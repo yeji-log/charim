@@ -405,8 +405,6 @@ function ClassPanel({
         onDateDeleted={(dateId) => setDates(dates.filter((entry) => entry.id !== dateId))}
       />
 
-      <DateMemoPanel dates={dates} onEdit={setMemoEditing} />
-
       {memoEditing && (
         <DateMemoModal
           dateRecord={memoEditing}
@@ -692,17 +690,6 @@ function RecordTable({
                 <div className="flex flex-col items-center gap-1">
                   <span className="font-semibold text-text">{formatDateLabel(entry)}</span>
                   <button
-                    onClick={() => onEditMemo(entry)}
-                    title={entry.memo || '메모 추가'}
-                    aria-label={`${entry.date} 메모`}
-                    className={[
-                      'max-w-[72px] truncate text-[10px] font-normal',
-                      entry.memo ? 'text-primary-dark' : 'text-secondary',
-                    ].join(' ')}
-                  >
-                    {entry.memo ? entry.memo : '+ 메모'}
-                  </button>
-                  <button
                     onClick={() => handleDeleteDate(entry.id)}
                     aria-label={`${entry.date} 기록 지우기`}
                     className="text-[10px] font-normal text-muted hover:text-error"
@@ -755,47 +742,35 @@ function RecordTable({
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr>
+            <td className={stickyCell + ' left-0'} />
+            <td className={stickyCell + ' left-10 border-l'} />
+            <td className={stickyCell + ' left-[120px] border-l text-xs font-semibold text-muted'}>
+              메모
+            </td>
+            {/* 메모칸을 날짜 열마다 따로 둔다 — 아래에 전부 모아두면 어느 메모가
+                어느 날짜 것인지 매번 라벨을 다시 봐야 한다. 여기서는 칸의 위치
+                자체가 그 날짜 것이라는 뜻이라 헷갈릴 일이 없다. */}
+            {dates.map((entry) => (
+              <td key={entry.id} className="border-t border-l border-line px-2 py-2 align-top">
+                <button
+                  onClick={() => onEditMemo(entry)}
+                  title={entry.memo || '메모 추가'}
+                  className={[
+                    'w-full whitespace-normal break-words text-left text-xs',
+                    entry.memo ? 'text-text' : 'text-secondary',
+                  ].join(' ')}
+                >
+                  {entry.memo ? entry.memo : '+ 메모'}
+                </button>
+              </td>
+            ))}
+            <td className="border-t border-l border-line" />
+          </tr>
+        </tfoot>
       </table>
     </div>
-  )
-}
-
-/**
- * 출석부 아래에 두는 날짜별 메모 목록.
- *
- * 표 헤더 칸은 좁아서 메모를 다 보여줄 수 없다(한 줄로 잘라 보여주는 게
- * 전부다). 메모를 적은 날짜만 여기 다시 늘어놓아 잘리지 않은 전체 내용을
- * 보여준다 — 메모가 없는 날짜까지 늘어놓으면 출석부와 똑같이 길어지기만
- * 하므로 뺀다.
- */
-function DateMemoPanel({
-  dates,
-  onEdit,
-}: {
-  dates: DateRecord[]
-  onEdit: (dateRecord: DateRecord) => void
-}) {
-  const memoed = dates.filter((entry) => entry.memo)
-  if (memoed.length === 0) return null
-
-  return (
-    <section className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4">
-      <h3 className="text-sm font-bold text-text">날짜별 메모</h3>
-      <ul className="flex flex-col gap-2">
-        {memoed.map((entry) => (
-          <li key={entry.id} className="flex items-start gap-3 text-sm">
-            <span className="shrink-0 font-semibold text-text">{formatDateLabel(entry)}</span>
-            <span className="whitespace-pre-wrap text-muted">{entry.memo}</span>
-            <button
-              onClick={() => onEdit(entry)}
-              className="ml-auto shrink-0 text-xs text-muted hover:text-text"
-            >
-              고치기
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
   )
 }
 
