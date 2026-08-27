@@ -240,39 +240,37 @@ export default function BoardEditor({
             아직 없습니다.
           </p>
         ) : (
-          <ul className="mt-3 flex flex-col gap-2">
-            {activities.map((activity) => (
-              <li
-                key={activity.id}
-                className="flex flex-wrap items-center gap-2 rounded-xl border border-line px-4 py-3"
-              >
-                <span className="font-bold text-text">{activity.title}</span>
-                <span className="text-xs text-muted">항목 {activity.sections.length}개</span>
-
-                {/* 배지가 아니라 스위치다 — 보여주기만 하는 표시였을 때는 공개를
-                    뒤집으려고 활동을 열고 저장까지 해야 했다. */}
-                <div className="ml-auto flex items-center gap-2">
-                  <ToggleSwitch
-                    checked={activity.published}
-                    onChange={() => handleTogglePublished(activity)}
-                    disabled={publishBusy === activity.id}
-                    label={`${activity.title} 학생에게 공개`}
-                  />
-                  <span
-                    className={[
-                      'w-12 shrink-0 text-xs font-semibold',
-                      activity.published ? 'text-success' : 'text-warning',
-                    ].join(' ')}
-                  >
-                    {activity.published ? '공개됨' : '준비 중'}
-                  </span>
-                  <button onClick={() => setOpenActivity(activity)} className={ghost}>
-                    열기
-                  </button>
-                </div>
-              </li>
+          <div className="mt-3 flex flex-col gap-5">
+            {/* {seasonNoun}별로 묶어 보여준다 — 전에는 전부 한 목록에 섞여 있어서
+                어느 것이 어느 {seasonNoun}에 속하는지 제목만 보고는 알 수 없었다
+                (사용자 피드백). 그룹 순서는 {seasonNoun} 목록 순서를 그대로
+                따른다. */}
+            {seasons.map((season) => (
+              <ActivityGroup
+                key={season.id}
+                label={`${season.emoji} ${season.title}`}
+                activities={activities.filter((activity) => activity.seasonId === season.id)}
+                publishBusy={publishBusy}
+                onTogglePublished={handleTogglePublished}
+                onOpen={setOpenActivity}
+              />
             ))}
-          </ul>
+
+            {(() => {
+              const unassigned = activities.filter(
+                (activity) => !seasons.some((season) => season.id === activity.seasonId),
+              )
+              return unassigned.length > 0 ? (
+                <ActivityGroup
+                  label={`소속 없음 — 아래에서 ${seasonNoun}을(를) 정해 주세요`}
+                  activities={unassigned}
+                  publishBusy={publishBusy}
+                  onTogglePublished={handleTogglePublished}
+                  onOpen={setOpenActivity}
+                />
+              ) : null
+            })()}
+          </div>
         )}
       </section>
 
@@ -307,6 +305,67 @@ export default function BoardEditor({
             setOpenActivity(null)
           }}
         />
+      )}
+    </div>
+  )
+}
+
+/** 수업 내용 목록에서 시즌(또는 "소속 없음") 한 덩어리. */
+function ActivityGroup({
+  label,
+  activities,
+  publishBusy,
+  onTogglePublished,
+  onOpen,
+}: {
+  label: string
+  activities: Activity[]
+  publishBusy: string | null
+  onTogglePublished: (activity: Activity) => void
+  onOpen: (activity: Activity) => void
+}) {
+  return (
+    <div>
+      <h4 className="text-xs font-semibold text-muted">{label}</h4>
+
+      {activities.length === 0 ? (
+        <p className="mt-2 rounded-xl border border-dashed border-line px-4 py-3 text-xs text-muted">
+          아직 없습니다.
+        </p>
+      ) : (
+        <ul className="mt-2 flex flex-col gap-2">
+          {activities.map((activity) => (
+            <li
+              key={activity.id}
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-line px-4 py-3"
+            >
+              <span className="font-bold text-text">{activity.title}</span>
+              <span className="text-xs text-muted">항목 {activity.sections.length}개</span>
+
+              {/* 배지가 아니라 스위치다 — 보여주기만 하는 표시였을 때는 공개를
+                  뒤집으려고 활동을 열고 저장까지 해야 했다. */}
+              <div className="ml-auto flex items-center gap-2">
+                <ToggleSwitch
+                  checked={activity.published}
+                  onChange={() => onTogglePublished(activity)}
+                  disabled={publishBusy === activity.id}
+                  label={`${activity.title} 학생에게 공개`}
+                />
+                <span
+                  className={[
+                    'w-12 shrink-0 text-xs font-semibold',
+                    activity.published ? 'text-success' : 'text-warning',
+                  ].join(' ')}
+                >
+                  {activity.published ? '공개됨' : '준비 중'}
+                </span>
+                <button onClick={() => onOpen(activity)} className={ghost}>
+                  열기
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )
