@@ -276,6 +276,7 @@ function ClassPanel({
   const [dates, setDates] = useState<DateRecord[]>([])
   const [loadError, setLoadError] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [memoEditing, setMemoEditing] = useState<DateRecord | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -397,12 +398,25 @@ function ClassPanel({
         students={students}
         dates={dates}
         onToggle={handleToggle}
-        onMemoChange={handleMemoChange}
+        onEditMemo={setMemoEditing}
         onStudentDeleted={(studentId) =>
           setStudents(students.filter((entry) => entry.id !== studentId))
         }
         onDateDeleted={(dateId) => setDates(dates.filter((entry) => entry.id !== dateId))}
       />
+
+      <DateMemoPanel dates={dates} onEdit={setMemoEditing} />
+
+      {memoEditing && (
+        <DateMemoModal
+          dateRecord={memoEditing}
+          onClose={() => setMemoEditing(null)}
+          onSave={async (memo) => {
+            await handleMemoChange(memoEditing.id, memo)
+            setMemoEditing(null)
+          }}
+        />
+      )}
 
       {settingsOpen && (
         <ClassSettings
@@ -618,7 +632,7 @@ function RecordTable({
   students,
   dates,
   onToggle,
-  onMemoChange,
+  onEditMemo,
   onStudentDeleted,
   onDateDeleted,
 }: {
@@ -627,12 +641,10 @@ function RecordTable({
   students: Student[]
   dates: DateRecord[]
   onToggle: (dateId: string, studentId: string, next: boolean) => void
-  onMemoChange: (dateId: string, memo: string) => Promise<void>
+  onEditMemo: (dateRecord: DateRecord) => void
   onStudentDeleted: (studentId: string) => void
   onDateDeleted: (dateId: string) => void
 }) {
-  const [memoEditing, setMemoEditing] = useState<DateRecord | null>(null)
-
   if (students.length === 0) {
     return (
       <section className="rounded-2xl border border-dashed border-line p-10 text-center text-sm text-muted">
@@ -676,17 +688,15 @@ function RecordTable({
             <th className={stickyHead + ' left-10 w-20 border-l'}>학번</th>
             <th className={stickyHead + ' left-[120px] w-28 border-l text-left'}>이름</th>
             {dates.map((entry) => (
-              <th
-                key={entry.id}
-                className="min-w-[92px] border-b border-l border-line px-2 py-3 text-xs align-top"
-              >
+              <th key={entry.id} className="border-b border-l border-line px-2 py-3 text-xs">
                 <div className="flex flex-col items-center gap-1">
                   <span className="font-semibold text-text">{formatDateLabel(entry)}</span>
                   <button
-                    onClick={() => setMemoEditing(entry)}
+                    onClick={() => onEditMemo(entry)}
+                    title={entry.memo || '메모 추가'}
                     aria-label={`${entry.date} 메모`}
                     className={[
-                      'w-full whitespace-normal break-words text-[10px] font-normal leading-snug',
+                      'max-w-[72px] truncate text-[10px] font-normal',
                       entry.memo ? 'text-primary-dark' : 'text-secondary',
                     ].join(' ')}
                   >
@@ -746,18 +756,46 @@ function RecordTable({
           ))}
         </tbody>
       </table>
-
-      {memoEditing && (
-        <DateMemoModal
-          dateRecord={memoEditing}
-          onClose={() => setMemoEditing(null)}
-          onSave={async (memo) => {
-            await onMemoChange(memoEditing.id, memo)
-            setMemoEditing(null)
-          }}
-        />
-      )}
     </div>
+  )
+}
+
+/**
+ * 출석부 아래에 두는 날짜별 메모 목록.
+ *
+ * 표 헤더 칸은 좁아서 메모를 다 보여줄 수 없다(한 줄로 잘라 보여주는 게
+ * 전부다). 메모를 적은 날짜만 여기 다시 늘어놓아 잘리지 않은 전체 내용을
+ * 보여준다 — 메모가 없는 날짜까지 늘어놓으면 출석부와 똑같이 길어지기만
+ * 하므로 뺀다.
+ */
+function DateMemoPanel({
+  dates,
+  onEdit,
+}: {
+  dates: DateRecord[]
+  onEdit: (dateRecord: DateRecord) => void
+}) {
+  const memoed = dates.filter((entry) => entry.memo)
+  if (memoed.length === 0) return null
+
+  return (
+    <section className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4">
+      <h3 className="text-sm font-bold text-text">날짜별 메모</h3>
+      <ul className="flex flex-col gap-2">
+        {memoed.map((entry) => (
+          <li key={entry.id} className="flex items-start gap-3 text-sm">
+            <span className="shrink-0 font-semibold text-text">{formatDateLabel(entry)}</span>
+            <span className="whitespace-pre-wrap text-muted">{entry.memo}</span>
+            <button
+              onClick={() => onEdit(entry)}
+              className="ml-auto shrink-0 text-xs text-muted hover:text-text"
+            >
+              고치기
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 
