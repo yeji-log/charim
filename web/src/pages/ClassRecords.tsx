@@ -276,7 +276,6 @@ function ClassPanel({
   const [dates, setDates] = useState<DateRecord[]>([])
   const [loadError, setLoadError] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [memoEditing, setMemoEditing] = useState<DateRecord | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -398,23 +397,13 @@ function ClassPanel({
         students={students}
         dates={dates}
         onToggle={handleToggle}
-        onEditMemo={setMemoEditing}
         onStudentDeleted={(studentId) =>
           setStudents(students.filter((entry) => entry.id !== studentId))
         }
         onDateDeleted={(dateId) => setDates(dates.filter((entry) => entry.id !== dateId))}
       />
 
-      {memoEditing && (
-        <DateMemoModal
-          dateRecord={memoEditing}
-          onClose={() => setMemoEditing(null)}
-          onSave={async (memo) => {
-            await handleMemoChange(memoEditing.id, memo)
-            setMemoEditing(null)
-          }}
-        />
-      )}
+      {dates.length > 0 && <DateMemoBox dates={dates} onSave={handleMemoChange} />}
 
       {settingsOpen && (
         <ClassSettings
@@ -630,7 +619,6 @@ function RecordTable({
   students,
   dates,
   onToggle,
-  onEditMemo,
   onStudentDeleted,
   onDateDeleted,
 }: {
@@ -639,7 +627,6 @@ function RecordTable({
   students: Student[]
   dates: DateRecord[]
   onToggle: (dateId: string, studentId: string, next: boolean) => void
-  onEditMemo: (dateRecord: DateRecord) => void
   onStudentDeleted: (studentId: string) => void
   onDateDeleted: (dateId: string) => void
 }) {
@@ -742,56 +729,47 @@ function RecordTable({
             </tr>
           ))}
         </tbody>
-        <tfoot>
-          <tr>
-            <td className={stickyCell + ' left-0'} />
-            <td className={stickyCell + ' left-10 border-l'} />
-            <td className={stickyCell + ' left-[120px] border-l text-xs font-semibold text-muted'}>
-              메모
-            </td>
-            {/* 메모칸을 날짜 열마다 따로 둔다 — 아래에 전부 모아두면 어느 메모가
-                어느 날짜 것인지 매번 라벨을 다시 봐야 한다. 여기서는 칸의 위치
-                자체가 그 날짜 것이라는 뜻이라 헷갈릴 일이 없다. */}
-            {dates.map((entry) => (
-              <td key={entry.id} className="border-t border-l border-line px-2 py-2 align-top">
-                <button
-                  onClick={() => onEditMemo(entry)}
-                  title={entry.memo || '메모 추가'}
-                  className={[
-                    'w-full whitespace-normal break-words text-left text-xs',
-                    entry.memo ? 'text-text' : 'text-secondary',
-                  ].join(' ')}
-                >
-                  {entry.memo ? entry.memo : '+ 메모'}
-                </button>
-              </td>
-            ))}
-            <td className="border-t border-l border-line" />
-          </tr>
-        </tfoot>
       </table>
     </div>
   )
 }
 
-function DateMemoModal({
-  dateRecord,
-  onClose,
+/**
+ * 출석부 아래에 두는 날짜별 메모.
+ *
+ * CHICODE 의 반 메모(설정 안에 숨어 있지 않고 페이지에 그냥 놓인 평범한
+ * textarea)와 같은 방식으로 만든다 — 작은 버튼을 눌러 모달을 여는 대신,
+ * 큰 입력칸이 늘 보이고 포커스를 벗어나면 바로 저장된다. 다만 여기 메모는
+ * 반 전체가 아니라 날짜 하나에 매인 것이라 어떤 날짜인지 먼저 고르게 한다.
+ * 기본값은 가장 최근 날짜 — 보통 방금 만든 오늘 기록을 적으러 오기 때문이다.
+ */
+function DateMemoBox({
+  dates,
   onSave,
 }: {
-  dateRecord: DateRecord
-  onClose: () => void
-  onSave: (memo: string) => Promise<void>
+  dates: DateRecord[]
+  onSave: (dateId: string, memo: string) => Promise<void>
 }) {
-  const [memo, setMemo] = useState(dateRecord.memo ?? '')
+  const [selectedId, setSelectedId] = useState(dates[dates.length - 1]?.id ?? '')
+  const selected = dates.find((entry) => entry.id === selectedId) ?? dates[dates.length - 1]
+
+  const [text, setText] = useState(selected?.memo ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleSave() {
+  // 고른 날짜가 바뀌면 그 날짜의 저장된 메모로 입력칸을 다시 채운다.
+  useEffect(() => {
+    setText(selected?.memo ?? '')
+    setError(null)
+  }, [selected?.id])
+
+  async function handleBlur() {
+    if (!selected) return
+    if (text.trim() === (selected.memo ?? '')) return
     setBusy(true)
     setError(null)
     try {
-      await onSave(memo)
+      await onSave(selected.id, text)
     } catch (caught) {
       console.error('날짜 메모 저장 실패', caught)
       setError('저장하지 못했습니다. 다시 시도해 주세요.')
@@ -800,28 +778,35 @@ function DateMemoModal({
     }
   }
 
+  if (!selected) return null
+
   return (
-    <Modal title={`${dateRecord.date} 메모`} onClose={onClose}>
-      <div className="flex flex-col gap-3">
-        <textarea
-          value={memo}
-          onChange={(event) => setMemo(event.target.value)}
-          rows={4}
-          autoFocus
-          placeholder="이 날 수업에 대한 메모 (진도, 특이사항 등)"
-          className={inputClass}
-        />
-        {error && <p className="text-sm text-error">{error}</p>}
-        <div className="flex items-center gap-2">
-          <button onClick={handleSave} disabled={busy} className={primaryButton}>
-            {busy ? '저장 중…' : '저장'}
-          </button>
-          <button type="button" onClick={onClose} disabled={busy} className={ghostButton}>
-            취소
-          </button>
-        </div>
+    <section className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-sm font-bold text-text">메모</h3>
+        <select
+          value={selected.id}
+          onChange={(event) => setSelectedId(event.target.value)}
+          className="ml-auto rounded-lg border border-line bg-surface px-2 py-1 text-sm text-text outline-none focus:border-secondary"
+        >
+          {dates.map((entry) => (
+            <option key={entry.id} value={entry.id}>
+              {formatDateLabel(entry)}
+            </option>
+          ))}
+        </select>
       </div>
-    </Modal>
+      <textarea
+        value={text}
+        onChange={(event) => setText(event.target.value)}
+        onBlur={handleBlur}
+        disabled={busy}
+        rows={4}
+        placeholder="이 날 수업에 대한 메모를 자유롭게 적어두세요."
+        className="rounded-lg border border-line bg-surface px-3 py-2 text-sm text-text outline-none focus:border-secondary disabled:opacity-60"
+      />
+      {error && <p className="text-sm text-error">{error}</p>}
+    </section>
   )
 }
 
