@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { useAuth } from '../auth/AuthProvider'
 import Modal from '../components/Modal'
@@ -277,6 +277,19 @@ function ClassPanel({
   const [loadError, setLoadError] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
+  // 표 헤더에서 어느 날짜를 눌렀는지를 여기서 들고 있는다 — 헤더(RecordTable)와
+  // 메모 칸(DateMemoBox)이 서로 형제 컴포넌트라 상태를 둘 다 내려다볼 수 있는
+  // 여기서 관리해야 헤더를 눌렀을 때 메모 칸이 그 날짜로 바뀐다.
+  const [selectedMemoDateId, setSelectedMemoDateId] = useState<string | null>(null)
+  const memoBoxRef = useRef<HTMLDivElement>(null)
+
+  function handleSelectMemoDate(dateId: string) {
+    setSelectedMemoDateId(dateId)
+    // 메모 칸은 표 아래에 있어서 화면 밖일 수 있다 — 눌렀는데 아무 반응이
+    // 안 보이면 소용없으니 그 자리로 스크롤해서 바뀐 걸 바로 보여준다.
+    memoBoxRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+
   useEffect(() => {
     let cancelled = false
 
@@ -397,13 +410,23 @@ function ClassPanel({
         students={students}
         dates={dates}
         onToggle={handleToggle}
+        onSelectDate={handleSelectMemoDate}
         onStudentDeleted={(studentId) =>
           setStudents(students.filter((entry) => entry.id !== studentId))
         }
         onDateDeleted={(dateId) => setDates(dates.filter((entry) => entry.id !== dateId))}
       />
 
-      {dates.length > 0 && <DateMemoBox dates={dates} onSave={handleMemoChange} />}
+      {dates.length > 0 && (
+        <div ref={memoBoxRef}>
+          <DateMemoBox
+            dates={dates}
+            selectedId={selectedMemoDateId}
+            onSelect={setSelectedMemoDateId}
+            onSave={handleMemoChange}
+          />
+        </div>
+      )}
 
       {settingsOpen && (
         <ClassSettings
@@ -619,6 +642,7 @@ function RecordTable({
   students,
   dates,
   onToggle,
+  onSelectDate,
   onStudentDeleted,
   onDateDeleted,
 }: {
@@ -627,6 +651,7 @@ function RecordTable({
   students: Student[]
   dates: DateRecord[]
   onToggle: (dateId: string, studentId: string, next: boolean) => void
+  onSelectDate: (dateId: string) => void
   onStudentDeleted: (studentId: string) => void
   onDateDeleted: (dateId: string) => void
 }) {
@@ -675,7 +700,14 @@ function RecordTable({
             {dates.map((entry) => (
               <th key={entry.id} className="border-b border-l border-line px-2 py-3 text-xs">
                 <div className="flex flex-col items-center gap-1">
-                  <span className="font-semibold text-text">{formatDateLabel(entry)}</span>
+                  <button
+                    onClick={() => onSelectDate(entry.id)}
+                    title="이 날짜 메모 보기"
+                    aria-label={`${entry.date} 메모 보기`}
+                    className="font-semibold text-text hover:text-primary-dark hover:underline"
+                  >
+                    {formatDateLabel(entry)}
+                  </button>
                   <button
                     onClick={() => handleDeleteDate(entry.id)}
                     aria-label={`${entry.date} 기록 지우기`}
@@ -745,13 +777,18 @@ function RecordTable({
  */
 function DateMemoBox({
   dates,
+  selectedId,
+  onSelect,
   onSave,
 }: {
   dates: DateRecord[]
+  /** null 이면 아직 표 헤더에서 고른 날짜가 없다는 뜻 — 가장 최근 날짜로 본다. */
+  selectedId: string | null
+  onSelect: (dateId: string) => void
   onSave: (dateId: string, memo: string) => Promise<void>
 }) {
-  const [selectedId, setSelectedId] = useState(dates[dates.length - 1]?.id ?? '')
-  const selected = dates.find((entry) => entry.id === selectedId) ?? dates[dates.length - 1]
+  const selected =
+    dates.find((entry) => entry.id === selectedId) ?? dates[dates.length - 1]
 
   const [text, setText] = useState(selected?.memo ?? '')
   const [busy, setBusy] = useState(false)
@@ -786,7 +823,7 @@ function DateMemoBox({
         <h3 className="text-sm font-bold text-text">메모</h3>
         <select
           value={selected.id}
-          onChange={(event) => setSelectedId(event.target.value)}
+          onChange={(event) => onSelect(event.target.value)}
           className="ml-auto rounded-lg border border-line bg-surface px-2 py-1 text-sm text-text outline-none focus:border-secondary"
         >
           {dates.map((entry) => (
